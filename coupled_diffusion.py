@@ -134,14 +134,14 @@ def diffusion(x1,x2,r,m_max,N,w):
 
 
 
-def path_coupled_diffusion(N, M, T, w, Np):
+def path_coupled(N, J, T, w, Np):
 
 
     Np = 20.
     Nt = 100000000.
 
     N1 = N
-    N2 = N*pow(2,M)
+    N2 = N*pow(2,J)
 
     t_grid = zeros(Nt)
     X1 = zeros((Nt,N1))
@@ -150,7 +150,7 @@ def path_coupled_diffusion(N, M, T, w, Np):
     x1 = zeros(N1)
     x2 = zeros(N2)
 
-    X1[0] = pow(2,M)*ones(N1)
+    X1[0] = pow(2,J)*ones(N1)
     X2[0] = ones(N2)
 
     i = 0

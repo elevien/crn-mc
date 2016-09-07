@@ -18,7 +18,7 @@ for j in range(K):
     CRUDE = zeros(S)
     for i in range(S):
         N = N_range[j]
-        X1,X2,t_grid = path_coupled_diffusion(N, M, T, w, Np)
+        X1,X2,t_grid = path_coupled(N, M, T, w, Np)
         DIFF[i] = abs(X1[-1,4]-(X2[-1,8]+X2[-1,9]))
         CRUDE[i] = X1[-1,4]
     v_DIFF[j] = var(DIFF)
