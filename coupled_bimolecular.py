@@ -4,7 +4,7 @@ def rho(u,v):
     return u - min(u,v)
 
 def exponential0(l):
-    exp_max = 100000000000000.
+    exp_max = 1000000000.
     if (l <= 0):
         return exp_max
     else:
@@ -81,7 +81,7 @@ def get_reaction(N0,N1,k,J,r_next):
 
 def path_coupled(N,J,level,w,t_max):
     Np = 20.
-    Nt = 10000000.
+    Nt = 1000.
     t_grid = zeros(Nt)
 
     N0 = int(N/(pow(J,level)))     # fine grid
@@ -208,7 +208,8 @@ def path_coupled(N,J,level,w,t_max):
     t_grid[1] = t_next
 
     k = 2.
-    while (t_grid[k]<t_max) and (k<Nt):
+    while (k+100<Nt):
+
         x0[:] = X0[k-1]
         x1[:] = X1[k-1]
 
@@ -291,4 +292,5 @@ def path_coupled(N,J,level,w,t_max):
             Y1[k][:] = y1 + u1
             t_grid[k] = t_next
             k = k+1
-    return X0,X1,Y0,Y1
+
+    return X0,X1,Y0,Y1,t_grid
