@@ -3,7 +3,7 @@ from coupled_bimolecular import *
 
 
 N = 100
-J = 3
+J = 4
 level = 0
 w = 1.
 T = 1.
