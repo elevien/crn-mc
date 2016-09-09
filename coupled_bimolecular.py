@@ -81,7 +81,7 @@ def get_reaction(N0,N1,k,J,r_next):
 
 def path_coupled(N,J,level,w,t_max):
     Np = 20.
-    Nt = 100000000.
+    Nt = 10000000.
     t_grid = zeros(Nt)
 
     N0 = int(N/(pow(J,level)))     # fine grid
@@ -207,14 +207,13 @@ def path_coupled(N,J,level,w,t_max):
     Y1[1][:] = y1 + u1
     t_grid[1] = t_next
 
-    i = 2.
-    while (t_grid[i-1] < t_max) and (i<Nt):
+    k = 2.
+    while (t_grid[k]<t_max) and (k<Nt):
+        x0[:] = X0[k-1]
+        x1[:] = X1[k-1]
 
-        x0[:] = X0[i-1]
-        x1[:] = X1[i-1]
-
-        y0[:] = Y0[i-1]
-        y1[:] = Y1[i-1]
+        y0[:] = Y0[k-1]
+        y1[:] = Y1[k-1]
 
 
         for i in range(N1):
@@ -234,62 +233,62 @@ def path_coupled(N,J,level,w,t_max):
             t_r_1m0[i] = (a_r_1m0[i]/a_r_1m0_new)*(t_r_1m0[i]-t_next)
 
             a_r_0m1[i] = a_r_0m1_new
-        # diffusion
-        for i in range(N1-1):
-            a_dx_0c1_r_new = min(w*x0[i*J],w*x1[i])
-            a_dx_0m1_r_new = rho(w*x0[i*J],w*x1[i])
-            a_dx_1m0_r_new = rho(w*x1[i],w*x0[i*J])
-            a_dx_0c1_l_new = min(w*x0[(i+1)*J],w*x1[i+1])
-            a_dx_0m1_l_new = rho(w*x0[(i+1)*J],w*x1[i+1])
-            a_dx_1m0_l_new = rho(w*x1[i+1],w*x0[(i+1)*J])
+            # diffusion
+            for i in range(N1-1):
+                a_dx_0c1_r_new = min(w*x0[i*J],w*x1[i])
+                a_dx_0m1_r_new = rho(w*x0[i*J],w*x1[i])
+                a_dx_1m0_r_new = rho(w*x1[i],w*x0[i*J])
+                a_dx_0c1_l_new = min(w*x0[(i+1)*J],w*x1[i+1])
+                a_dx_0m1_l_new = rho(w*x0[(i+1)*J],w*x1[i+1])
+                a_dx_1m0_l_new = rho(w*x1[i+1],w*x0[(i+1)*J])
 
-            t_dx_0c1_r[i] = (a_dx_0c1_r[i]/a_dx_0c1_r_new)*(t_dx_0c1_r[i]-t_next)
-            t_dx_0m1_r[i] = (a_dx_0m1_r[i]/a_dx_0m1_r_new)*(t_dx_0m1_r[i]-t_next)
-            t_dx_1m0_r[i] = (a_dx_1m0_r[i]/a_dx_1m0_r_new)*(t_dx_1m0_r[i]-t_next)
-            t_dx_0c1_l[i] = (a_dx_0c1_l[i]/a_dx_0c1_l_new)*(t_dx_0c1_l[i]-t_next)
-            t_dx_0m1_l[i] = (a_dx_0m1_l[i]/a_dx_0m1_l_new)*(t_dx_0m1_l[i]-t_next)
-            t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)
+                t_dx_0c1_r[i] = (a_dx_0c1_r[i]/a_dx_0c1_r_new)*(t_dx_0c1_r[i]-t_next)
+                t_dx_0m1_r[i] = (a_dx_0m1_r[i]/a_dx_0m1_r_new)*(t_dx_0m1_r[i]-t_next)
+                t_dx_1m0_r[i] = (a_dx_1m0_r[i]/a_dx_1m0_r_new)*(t_dx_1m0_r[i]-t_next)
+                t_dx_0c1_l[i] = (a_dx_0c1_l[i]/a_dx_0c1_l_new)*(t_dx_0c1_l[i]-t_next)
+                t_dx_0m1_l[i] = (a_dx_0m1_l[i]/a_dx_0m1_l_new)*(t_dx_0m1_l[i]-t_next)
+                t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)
 
-            a_dx_0c1_r[i] = a_dx_0c1_r_new
-            a_dx_0m1_r[i] = a_dx_0m1_r_new
-            a_dx_1m0_r[i] = a_dx_1m0_r_new
-            a_dx_0c1_l[i] = a_dx_0c1_l_new
-            a_dx_0m1_l[i] = a_dx_0m1_l_new
-            a_dx_1m0_l[i] = a_dx_1m0_l_new
-
-
+                a_dx_0c1_r[i] = a_dx_0c1_r_new
+                a_dx_0m1_r[i] = a_dx_0m1_r_new
+                a_dx_1m0_r[i] = a_dx_1m0_r_new
+                a_dx_0c1_l[i] = a_dx_0c1_l_new
+                a_dx_0m1_l[i] = a_dx_0m1_l_new
+                a_dx_1m0_l[i] = a_dx_1m0_l_new
 
 
-            for m in range(J-1):
-                a_dx_0_r_new = w*x0[i*J+m]
-                a_dx_0_l_new = w*x0[i*J+m+1]
 
-                t_dx_0_r[i*(J-1)+m] = (a_dx_0_r[i*(J-1)+m]/a_dx_0_r_new)*(t_dx_0_r[i*(J-1)+m]-t_next)
-                t_dx_0_l[i*(J-1)+m] = (a_dx_0_l[i*(J-1)+m]/a_dx_0_l_new)*(t_dx_0_l[i*(J-1)+m]-t_next)
 
-                a_dx_0_r[i*(J-1)+m] = a_dx_0_r_new
-                a_dx_0_l[i*(J-1)+m] = a_dx_0_l_new
+                for m in range(J-1):
+                    a_dx_0_r_new = w*x0[i*J+m]
+                    a_dx_0_l_new = w*x0[i*J+m+1]
 
-        # find min time and it's index
+                    t_dx_0_r[i*(J-1)+m] = (a_dx_0_r[i*(J-1)+m]/a_dx_0_r_new)*(t_dx_0_r[i*(J-1)+m]-t_next)
+                    t_dx_0_l[i*(J-1)+m] = (a_dx_0_l[i*(J-1)+m]/a_dx_0_l_new)*(t_dx_0_l[i*(J-1)+m]-t_next)
 
-        # generate 11 reactions
-        T = array([min(t_r_0c1),min(t_r_0m1),min(t_r_1m0),
-         min(t_dx_0c1_l),min(t_dx_0m1_l),min(t_dx_1m0_l),min(t_dx_0_l),
-         min(t_dx_0c1_r),min(t_dx_0m1_r),min(t_dx_1m0_r),min(t_dx_0_r)])
+                    a_dx_0_r[i*(J-1)+m] = a_dx_0_r_new
+                    a_dx_0_l[i*(J-1)+m] = a_dx_0_l_new
 
-        R = array([argmin(t_r_0c1),argmin(t_r_0m1),argmin(t_r_1m0),\
-         argmin(t_dx_0c1_l),argmin(t_dx_0m1_l),argmin(t_dx_1m0_l),argmin(t_dx_0_l),\
-         argmin(t_dx_0c1_r),argmin(t_dx_0m1_r),argmin(t_dx_1m0_r),argmin(t_dx_0_r)])
+            # find min time and it's index
 
-        t_next = min(T)
-        r_next = argmin(T) # which type of reaction
-        k = R[argmin(T)] # location of reaction
-        v0,v1,u0,u1 = get_reaction(N0,N1,k,J,r_next)
+            # generate 11 reactions
+            T = array([min(t_r_0c1),min(t_r_0m1),min(t_r_1m0),
+             min(t_dx_0c1_l),min(t_dx_0m1_l),min(t_dx_1m0_l),min(t_dx_0_l),
+             min(t_dx_0c1_r),min(t_dx_0m1_r),min(t_dx_1m0_r),min(t_dx_0_r)])
 
-        X0[1][:] = x0 + v0
-        X1[1][:] = x1 + v1
-        Y0[1][:] = y0 + u0
-        Y1[1][:] = y1 + u1
-        t_grid[1] = t_next
-        i = i+1
+            R = array([argmin(t_r_0c1),argmin(t_r_0m1),argmin(t_r_1m0),\
+             argmin(t_dx_0c1_l),argmin(t_dx_0m1_l),argmin(t_dx_1m0_l),argmin(t_dx_0_l),\
+             argmin(t_dx_0c1_r),argmin(t_dx_0m1_r),argmin(t_dx_1m0_r),argmin(t_dx_0_r)])
+
+            t_next = min(T)
+            r_next = argmin(T) # which type of reaction
+            l = R[argmin(T)] # location of reaction
+            v0,v1,u0,u1 = get_reaction(N0,N1,l,J,r_next)
+
+            X0[k][:] = x0 + v0
+            X1[k][:] = x1 + v1
+            Y0[k][:] = y0 + u0
+            Y1[k][:] = y1 + u1
+            t_grid[k] = t_next
+            k = k+1
     return X0,X1,Y0,Y1
