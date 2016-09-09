@@ -7,4 +7,4 @@ J = 4
 level = 0
 w = 1.
 T = 1.
-path_coupled(N,J,level,w,T)
+X0,X1,Y0,Y1 = path_coupled(N,J,level,w,T)
