@@ -257,6 +257,8 @@ def path_coupled(N,J,level,w,t_max):
             a_dx_0m1_l[i] = a_dx_0m1_l_new
             a_dx_1m0_l[i] = a_dx_1m0_l_new
 
+
+
             for m in range(J-1):
                 a_dx_0_r_new = w*x0[i*J+m]
                 a_dx_0_l_new = w*x0[i*J+m+1]
