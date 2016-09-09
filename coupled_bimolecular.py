@@ -1,10 +1,11 @@
 from pylab import *
 
+global exp_max
+exp_max =  1000000000.
 def rho(u,v):
     return u - min(u,v)
 
 def exponential0(rate):
-    exp_max = 1000000000.
     if (rate <= 0):
         return exp_max
     else:
@@ -80,8 +81,8 @@ def get_reaction(N0,N1,l,J,r_next):
     return v0,v1,u0,u1
 
 def path_coupled(N,J,level,w,t_max):
-    Np = 20.
-    Nt = 30.
+    Np = 100.
+    Nt = 300.
     t_grid = zeros(Nt)
 
     N0 = int(N/(pow(J,level)))     # fine grid
@@ -95,10 +96,10 @@ def path_coupled(N,J,level,w,t_max):
     Y0 = zeros((Nt,N0))
     Y1 = zeros((Nt,N1))
 
-    x0 = ones(N0)/(pow(J,level))
-    x1 = ones(N1)/(pow(J,level+1))
-    y0 = ones(N0)/(pow(J,level))
-    y1 = ones(N1)/(pow(J,level+1))
+    x0 = Np*ones(N0)/(pow(J,level))
+    x1 = Np*ones(N1)/(pow(J,level+1))
+    y0 = Np*ones(N0)/(pow(J,level))
+    y1 = Np*ones(N1)/(pow(J,level+1))
 
     # only one reaction: X+Y->0
     t_r_0c1 = zeros(N0)
@@ -230,7 +231,7 @@ def path_coupled(N,J,level,w,t_max):
                 if r_next == 1:
                     t_r_0m1[i*J+m] = exponential0(a_r_0m1_new)
                 else:
-                    t_r_0m1[i*J+m] = (a_r_0m1[i*J+m]/a_r_0m1_new)*(t_r_0c1[i*J+m]-t_next)
+                    t_r_0m1[i*J+m] = (a_r_0m1[i*J+m]/a_r_0m1_new)*(t_r_0m1[i*J+m]-t_next)
 
                 a_r_0c1[i*J+m] = a_r_0c1_new
                 a_r_0m1[i*J+m] = a_r_0m1_new
@@ -272,19 +273,19 @@ def path_coupled(N,J,level,w,t_max):
                     t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)
 
                 if r_next == 7:
-                    t_dx_0c1_l[i] = exponential0(a_dx_0c1_r_new)
+                    t_dx_0c1_r[i] = exponential0(a_dx_0c1_r_new)
                 else:
-                    t_dx_0c1_l[i] = (a_dx_0c1_l[i]/a_dx_0c1_l_new)*(t_dx_0c1_l[i]-t_next)
+                    t_dx_0c1_r[i] = (a_dx_0c1_r[i]/a_dx_0c1_r_new)*(t_dx_0c1_r[i]-t_next)
 
                 if r_next == 8:
-                    t_dx_0m1_l[i] = exponential0(a_dx_0m1_l_new)
+                    t_dx_0m1_r[i] = exponential0(a_dx_0m1_r_new)
                 else:
-                    t_dx_0m1_l[i] = (a_dx_0m1_l[i]/a_dx_0m1_l_new)*(t_dx_0m1_l[i]-t_next)
+                    t_dx_0m1_r[i] = (a_dx_0m1_r[i]/a_dx_0m1_r_new)*(t_dx_0m1_r[i]-t_next)
 
                 if r_next == 9:
-                    t_dx_1m0_l[i] = exponential0(a_dx_1m0_l_new)
+                    t_dx_1m0_r[i] = exponential0(a_dx_1m0_r_new)
                 else:
-                    t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)
+                    t_dx_1m0_r[i] = (a_dx_1m0_r[i]/a_dx_1m0_r_new)*(t_dx_1m0_r[i]-t_next)
 
 
 
@@ -325,13 +326,15 @@ def path_coupled(N,J,level,w,t_max):
         T = array([min(t_r_0c1),min(t_r_0m1),min(t_r_1m0),
          min(t_dx_0c1_l),min(t_dx_0m1_l),min(t_dx_1m0_l),min(t_dx_0_l),
          min(t_dx_0c1_r),min(t_dx_0m1_r),min(t_dx_1m0_r),min(t_dx_0_r)])
-        print(T)
+
         R = array([argmin(t_r_0c1),argmin(t_r_0m1),argmin(t_r_1m0),\
          argmin(t_dx_0c1_l),argmin(t_dx_0m1_l),argmin(t_dx_1m0_l),argmin(t_dx_0_l),\
          argmin(t_dx_0c1_r),argmin(t_dx_0m1_r),argmin(t_dx_1m0_r),argmin(t_dx_0_r)])
-
-        t_next = min(T)
-        r_next = argmin(T) # which type of reaction
+        print("T = "+str(T))
+        #print("R = "+str(R))
+        t_next = min(T[T>0])
+        print("t_next = "+str(t_next))
+        r_next = nonzero(T)[0][argmin(T[T>0])] # which type of reaction
         l = R[argmin(T)]  # spatial location of reaction
         v0,v1,u0,u1 = get_reaction(N0,N1,l,J,r_next)
 
@@ -339,7 +342,7 @@ def path_coupled(N,J,level,w,t_max):
         X1[k][:] = x1 + v1
         Y0[k][:] = y0 + u0
         Y1[k][:] = y1 + u1
-        t_grid[k] = t_next
+        t_grid[k] = t_grid[k-1]+t_next
         k = k+1
 
     return X0,X1,Y0,Y1,t_grid
