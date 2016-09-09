@@ -79,7 +79,7 @@ def get_reaction(N0,N1,k,J,r_next):
         u1 = 0
     return v0,v1,u0,u1
 
-def path_coupled(N,J,level,w,T):
+def path_coupled(N,J,level,w,t_max):
     Np = 20.
     Nt = 100000000.
     t_grid = zeros(Nt)
@@ -208,7 +208,7 @@ def path_coupled(N,J,level,w,T):
     t_grid[1] = t_next
 
     i = 2.
-    while (t_grid[i] < T) and (i<Nt):
+    while (t_grid[i-1] < t_max) and (i<Nt):
 
         x0[:] = X0[i-1]
         x1[:] = X1[i-1]
@@ -230,8 +230,8 @@ def path_coupled(N,J,level,w,T):
                 a_r_0m1[i*J+m] = a_r_0m1_new
 
                 a_sum = a_sum +x0[i*J+m]*y0[i*J+m]
-            a_r_0m1_new = rho(a_sum,x1[i]*y1[i])
-            t_r_1m0[i] = (a_r_0m1[i]/a_r_0m1_new)*(t_r_1m0[i]-t_next)
+            a_r_1m0_new = rho(a_sum,x1[i]*y1[i])
+            t_r_1m0[i] = (a_r_1m0[i]/a_r_1m0_new)*(t_r_1m0[i]-t_next)
 
             a_r_0m1[i] = a_r_0m1_new
         # diffusion
@@ -257,11 +257,9 @@ def path_coupled(N,J,level,w,T):
             a_dx_0m1_l[i] = a_dx_0m1_l_new
             a_dx_1m0_l[i] = a_dx_1m0_l_new
 
-
-
             for m in range(J-1):
-                a_dx_0_r[i*(J-1)+m] = w*x0[i*J+m]
-                a_dx_0_l[i*(J-1)+m] = w*x0[i*J+m+1]
+                a_dx_0_r_new = w*x0[i*J+m]
+                a_dx_0_l_new = w*x0[i*J+m+1]
 
                 t_dx_0_r[i*(J-1)+m] = (a_dx_0_r[i*(J-1)+m]/a_dx_0_r_new)*(t_dx_0_r[i*(J-1)+m]-t_next)
                 t_dx_0_l[i*(J-1)+m] = (a_dx_0_l[i*(J-1)+m]/a_dx_0_l_new)*(t_dx_0_l[i*(J-1)+m]-t_next)
