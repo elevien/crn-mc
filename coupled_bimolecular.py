@@ -396,24 +396,55 @@ def path_uncoupled(N,w,t_max):
     # reactions
     for i in range(N):
         rate = x0[i]*y0[i]
-        wait = exponential0(1.)
         stoichiometric_coeffs =(-identity(N)[i],-identity(N)[i])
         system_state = (x0,y0)
-        reaction = Reaction(i,2,stoichiometric_coeffs,system_state)
+        reaction = Reaction(N,i,2,stoichiometric_coeffs,system_state)
         events.append(reaction)
 
     # diffusions
     for i in range(N-1):
 
         # left diffusion
-        rate = x[]
-        reaction.append(Diffusion(i,x0[i*J+m]*y0[i*J+m],-identity(N)[i],zeros()))
+        left_diffusion = Diffusion(N,i,i+1,0,x0)
+        events.append(left_diffusion)
 
         # right diffusion
-        reaction.append(Diffusion(i,x0[i*J+m]*y0[i*J+m],-identity(N)[i],zeros()))
-    return events
-    #while i < Nt:
-        # calculate rates
+        right_diffusion = Diffusion(N,i+1,i,0,x0)
+        events.append(right_diffusion)
+
+    t_grid[0] = 0.
+    k = 1
+
+    while k < Nt:
+
+        x0[:] = X0[k-1]
+        y0[:] = Y0[k-1]
+        system_state=(x0,y0)
+
+        # find event with minimum absolute time
+        firing_event = min(events, key=lambda e: e.wait_absolute)
+        m = events.index(firing_event)
+        # get information needed from event
+        delta = firing_event.wait_absolute
+        stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+
+        # update events
+        firing_event.fire(system_state,delta)
+        # update all other events
+        for e in events:
+            e.no_fire(system_state,delta)
+
+
+        # update system
+        t_grid[i] = t_grid[i-1]+delta
+        x0[k][:] = x0 + stoichiometric_coeffs[0]
+        y0[k][:] = y0 + stoichiometric_coeffs[1]
+
+        k = k+1
+    return X0,Y0,t_grid
+
+
+
 
 
 
@@ -451,18 +482,18 @@ class Event:
 
 
 class Diffusion(Event):
-    def __init__(self,voxel_out,voxel_in,species,system_state):
-        super().__init__(system_state)
+    def __init__(self,mesh,voxel_out,voxel_in,species,system_state):
         self.voxel_out = voxel_out
         self.voxel_in = voxel_in
-        self.stoichiometric_coeff = stoichiometric_coeff
+        self.stoichiometric_coeffs = -identity(mesh)[voxel_out]+identity(mesh)[voxel_in]
+        super().__init__(system_state)
 
     def update_rate(self,system_state):
         self.rate = system_state[self.voxel_out]
         return None
 
 class Reaction(Event):
-    def __init__(self,voxel,order,stoichiometric_coeffs,system_state):
+    def __init__(self,mesh,voxel,order,stoichiometric_coeffs,system_state):
         self.voxel = voxel
         self.order = order
         self.stoichiometric_coeffs = stoichiometric_coeffs
@@ -475,3 +506,22 @@ class Reaction(Event):
             rate = rate*system_state[i][self.voxel]
         self.rate = rate
         return None
+
+class Diffusion_SplitComman(Event):
+    pass
+
+class Diffusion_SplitFine(Event):
+    pass
+
+class Diffusion_SplitCoarse(Event):
+    pass
+
+
+class Reaction_SplitComman(Event):
+    pass
+
+class Reaction_SplitFine(Event):
+    pass
+
+class Reaction_SplitCoarse(Event):
+    pass
