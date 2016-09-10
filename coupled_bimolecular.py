@@ -82,7 +82,7 @@ def get_reaction(N0,N1,l,J,r_next):
 
 def path_coupled(N,J,level,w,t_max):
     Np = 100.
-    Nt = 3000.
+    Nt = 1000.
     t_grid = zeros(Nt)
 
     N0 = int(N/(pow(J,level)))     # fine grid
@@ -229,7 +229,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 0 or a_r_0c1[i*J+m]==0:
                         t_r_0c1[i*J+m] = exponential0(a_r_0c1_new)
                     else:
-                        t_r_0c1[i*J+m] = (a_r_0c1[i*J+m]/a_r_0c1_new)*(t_r_0c1[i*J+m]-t_next)
+                        t_r_0c1[i*J+m] = (a_r_0c1[i*J+m]/a_r_0c1_new)*(t_r_0c1[i*J+m]-t_next)+t_next
 
                 if a_r_0m1_new==0:
                     t_r_0m1[i*J+m] = exp_max
@@ -237,7 +237,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 1 or a_r_0m1[i*J+m]==0:
                         t_r_0m1[i*J+m] = exponential0(a_r_0m1_new)
                     else:
-                        t_r_0m1[i*J+m] = (a_r_0m1[i*J+m]/a_r_0m1_new)*(t_r_0m1[i*J+m]-t_next)
+                        t_r_0m1[i*J+m] = (a_r_0m1[i*J+m]/a_r_0m1_new)*(t_r_0m1[i*J+m]-t_next)+t_next
 
                 a_r_0c1[i*J+m] = a_r_0c1_new
                 a_r_0m1[i*J+m] = a_r_0m1_new
@@ -251,7 +251,7 @@ def path_coupled(N,J,level,w,t_max):
                 if r_next == 2 or a_r_1m0[i]==0:
                     t_r_1m0[i]  = exponential0(a_r_1m0_new)
                 else:
-                    t_r_1m0[i] = (a_r_1m0[i]/a_r_1m0_new)*(t_r_1m0[i]-t_next)
+                    t_r_1m0[i] = (a_r_1m0[i]/a_r_1m0_new)*(t_r_1m0[i]-t_next)+t_next
 
             a_r_0m1[i] = a_r_0m1_new
 
@@ -269,7 +269,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 3 or a_dx_0c1_l[i]==0:
                         t_dx_0c1_l[i] = exponential0(a_dx_0c1_l_new)
                     else:
-                        t_dx_0c1_l[i] = (a_dx_0c1_l[i]/a_dx_0c1_l_new)*(t_dx_0c1_l[i]-t_next)
+                        t_dx_0c1_l[i] = (a_dx_0c1_l[i]/a_dx_0c1_l_new)*(t_dx_0c1_l[i]-t_next)+t_next
 
                 if a_dx_0m1_l_new==0:
                     t_dx_0m1_l[i] = exp_max
@@ -277,7 +277,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 4 or a_dx_0m1_l[i]==0:
                         t_dx_0m1_l[i] = exponential0(a_dx_0m1_l_new)
                     else:
-                        t_dx_0m1_l[i] = (a_dx_0m1_l[i]/a_dx_0m1_l_new)*(t_dx_0m1_l[i]-t_next)
+                        t_dx_0m1_l[i] = (a_dx_0m1_l[i]/a_dx_0m1_l_new)*(t_dx_0m1_l[i]-t_next)+t_next
 
                 if a_dx_1m0_l_new==0 or a_dx_1m0_l[i]==0:
                     t_dx_1m0_l[i] = exp_max
@@ -285,7 +285,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 5:
                         t_dx_1m0_l[i] = exponential0(a_dx_1m0_l_new)
                     else:
-                        t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)
+                        t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)+t_next
 
                 a_dx_0c1_l[i] = a_dx_0c1_l_new
                 a_dx_0m1_l[i] = a_dx_0m1_l_new
@@ -301,7 +301,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 7 or a_dx_0c1_r[i]==0:
                         t_dx_0c1_r[i] = exponential0(a_dx_0c1_r_new)
                     else:
-                        t_dx_0c1_r[i] = (a_dx_0c1_r[i]/a_dx_0c1_r_new)*(t_dx_0c1_r[i]-t_next)
+                        t_dx_0c1_r[i] = (a_dx_0c1_r[i]/a_dx_0c1_r_new)*(t_dx_0c1_r[i]-t_next)+t_next
 
                 if a_dx_0m1_r_new ==0:
                     t_dx_0m1_r[i] = exp_max
@@ -309,7 +309,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 8 or a_dx_0m1_r[i]==0:
                         t_dx_0m1_r[i] = exponential0(a_dx_0m1_r_new)
                     else:
-                        t_dx_0m1_r[i] = (a_dx_0m1_r[i]/a_dx_0m1_r_new)*(t_dx_0m1_r[i]-t_next)
+                        t_dx_0m1_r[i] = (a_dx_0m1_r[i]/a_dx_0m1_r_new)*(t_dx_0m1_r[i]-t_next)+t_next
 
                 if a_dx_1m0_r_new ==0:
                     t_dx_1m0_r[i] = exp_max
@@ -317,7 +317,7 @@ def path_coupled(N,J,level,w,t_max):
                     if r_next == 9 or a_dx_1m0_r[i]==0:
                         t_dx_1m0_r[i] = exponential0(a_dx_1m0_r_new)
                     else:
-                        t_dx_1m0_r[i] = (a_dx_1m0_r[i]/a_dx_1m0_r_new)*(t_dx_1m0_r[i]-t_next)
+                        t_dx_1m0_r[i] = (a_dx_1m0_r[i]/a_dx_1m0_r_new)*(t_dx_1m0_r[i]-t_next)+t_next
 
                 a_dx_0c1_r[i] = a_dx_0c1_r_new
                 a_dx_0m1_r[i] = a_dx_0m1_r_new
@@ -334,10 +334,7 @@ def path_coupled(N,J,level,w,t_max):
                         if r_next == 6 or a_dx_0_l[i*(J-1)+m]==0:
                             t_dx_0_l[i*(J-1)+m] = exponential0(a_dx_0_l_new)
                         else:
-                            #if t_dx_0_l[i*(J-1)+m]-t_next<=0:
-                            #    print("################################################")
-                            #    print("t_dx_0_l[i*(J-1)+m] = "+str(t_dx_0_l[i*(J-1)+m]))
-                            t_dx_0_l[i*(J-1)+m] = abs((a_dx_0_l[i*(J-1)+m]/a_dx_0_l_new)*(t_dx_0_l[i*(J-1)+m]-t_next))
+                            t_dx_0_l[i*(J-1)+m] =(a_dx_0_l[i*(J-1)+m]/a_dx_0_l_new)*(t_dx_0_l[i*(J-1)+m]-t_next)+t_next
 
 
                     if a_dx_0_r_new ==0:
@@ -346,7 +343,7 @@ def path_coupled(N,J,level,w,t_max):
                         if r_next == 10 or a_dx_0_r[i*(J-1)+m]==0:
                             t_dx_0_r[i*(J-1)+m] = exponential0(a_dx_0_r_new)
                         else:
-                            t_dx_0_r[i*(J-1)+m] = abs((a_dx_0_r[i*(J-1)+m]/a_dx_0_r_new)*(t_dx_0_r[i*(J-1)+m]-t_next))
+                            t_dx_0_r[i*(J-1)+m] =(a_dx_0_r[i*(J-1)+m]/a_dx_0_r_new)*(t_dx_0_r[i*(J-1)+m]-t_next)+t_next
 
 
 
@@ -357,9 +354,9 @@ def path_coupled(N,J,level,w,t_max):
         # find min time and it's index
 
         # generate 11 reactions
-        T = array([min(abs(t_r_0c1)),min(abs(t_r_0m1)),min(abs(t_r_1m0)),
-         min(abs(t_dx_0c1_l)),min(abs(t_dx_0m1_l)),min(abs(t_dx_1m0_l)),min(abs(t_dx_0_l)),
-         min(abs(t_dx_0c1_r)),min(abs(t_dx_0m1_r)),min(abs(t_dx_1m0_r)),min(abs(t_dx_0_r))])
+        T = array([min(t_r_0c1),min(t_r_0m1),min(t_r_1m0),
+         min(t_dx_0c1_l),min(t_dx_0m1_l),min(t_dx_1m0_l),min(t_dx_0_l),
+         min(t_dx_0c1_r),min(t_dx_0m1_r),min(t_dx_1m0_r),min(t_dx_0_r)])
         R = array([argmin(t_r_0c1),argmin(t_r_0m1),argmin(t_r_1m0),\
          argmin(t_dx_0c1_l),argmin(t_dx_0m1_l),argmin(t_dx_1m0_l),argmin(t_dx_0_l),\
          argmin(t_dx_0c1_r),argmin(t_dx_0m1_r),argmin(t_dx_1m0_r),argmin(t_dx_0_r)])
@@ -382,3 +379,99 @@ def path_coupled(N,J,level,w,t_max):
         k = k+1
 
     return X0,X1,Y0,Y1,t_grid
+
+def path_uncoupled(N,w,t_max):
+    Np = 100.
+    Nt = 1000.
+    t_grid = zeros(Nt)
+
+    X0 = zeros((Nt,N))
+    Y0 = zeros((Nt,N))
+
+    x0 = Np*ones(N)
+    y0 = Np*ones(N)
+
+    events = []
+
+    # reactions
+    for i in range(N):
+        rate = x0[i]*y0[i]
+        wait = exponential0(1.)
+        stoichiometric_coeffs =(-identity(N)[i],-identity(N)[i])
+        system_state = (x0,y0)
+        reaction = Reaction(i,2,stoichiometric_coeffs,system_state)
+        events.append(reaction)
+
+    # diffusions
+    for i in range(N-1):
+
+        # left diffusion
+        rate = x[]
+        reaction.append(Diffusion(i,x0[i*J+m]*y0[i*J+m],-identity(N)[i],zeros()))
+
+        # right diffusion
+        reaction.append(Diffusion(i,x0[i*J+m]*y0[i*J+m],-identity(N)[i],zeros()))
+    return events
+    #while i < Nt:
+        # calculate rates
+
+
+
+
+
+
+class Event:
+
+    def __init__(self,system_state):
+        self.time_internal = 0.
+        self.wait_internal = exponential0(1.)
+        self.update_rate(system_state)
+        self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
+
+
+
+    def fire(self,system_state,delta):
+        self.update_rate(system_state)
+        self.time_internal = self.time_internal + self.rate*delta
+        self.wait_internal = exponential0(1.)
+        self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
+        return None
+
+    def no_fire(self,system_state,delta):
+        self.update_rate(system_state)
+        self.time_internal = self.time_internal + self.rate*delta
+        # wait_internal remains unchanged
+        self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
+        return None
+
+
+    def update_rate(self,system_state):
+        self.rate = 0.
+        return None
+
+
+class Diffusion(Event):
+    def __init__(self,voxel_out,voxel_in,species,system_state):
+        super().__init__(system_state)
+        self.voxel_out = voxel_out
+        self.voxel_in = voxel_in
+        self.stoichiometric_coeff = stoichiometric_coeff
+
+    def update_rate(self,system_state):
+        self.rate = system_state[self.voxel_out]
+        return None
+
+class Reaction(Event):
+    def __init__(self,voxel,order,stoichiometric_coeffs,system_state):
+        self.voxel = voxel
+        self.order = order
+        self.stoichiometric_coeffs = stoichiometric_coeffs
+        super().__init__(system_state)
+
+    def update_rate(self,system_state):
+        # works for order =1,2
+        rate = 1.
+        for i in range(self.order):
+            rate = rate*system_state[i][self.voxel]
+        self.rate = rate
+        return None
