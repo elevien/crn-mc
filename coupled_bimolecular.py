@@ -83,7 +83,7 @@ def get_reaction(N0,N1,l,J,r_next):
 def path_coupled(N,J,level,w,t_max):
     Np = 100.
     Nt = 1000.
-    t_grid = zeros(Nt)
+    clock = zeros(Nt)
 
     N0 = int(N/(pow(J,level)))     # fine grid
     N1 = int(N/(pow(J,level+1))) # coarse grid
@@ -206,7 +206,7 @@ def path_coupled(N,J,level,w,t_max):
     X1[1][:] = x1 + v1
     Y0[1][:] = y0 + u0
     Y1[1][:] = y1 + u1
-    t_grid[1] = t_next
+    clock[1] = t_next
 
     k = 2.
     while (k<Nt):
@@ -374,30 +374,31 @@ def path_coupled(N,J,level,w,t_max):
         X1[k][:] = x1 + v1
         Y0[k][:] = y0 + u0
         Y1[k][:] = y1 + u1
-        t_grid[k] = t_grid[k-1]+t_next
-        #print("t_grid[k] = "+str(t_grid[k]))
+        clock[k] = clock[k-1]+t_next
+        #print("clock[k] = "+str(clock[k]))
         k = k+1
 
-    return X0,X1,Y0,Y1,t_grid
+    return X0,X1,Y0,Y1,clock
 
 def path_uncoupled(N,w,t_max):
     Np = 100.
-    Nt = 1000.
-    t_grid = zeros(Nt)
+    Nt = 3000.
+    clock = zeros(Nt)
 
     X0 = zeros((Nt,N))
     Y0 = zeros((Nt,N))
 
+    X0[0] = Np*ones(N)
+    Y0[0] = Np*ones(N)
     x0 = Np*ones(N)
     y0 = Np*ones(N)
-
+    system_state = [x0,y0]
     events = []
 
     # reactions
     for i in range(N):
         rate = x0[i]*y0[i]
-        stoichiometric_coeffs =(-identity(N)[i],-identity(N)[i])
-        system_state = (x0,y0)
+        stoichiometric_coeffs =[-identity(N)[i],-identity(N)[i]]
         reaction = Reaction(N,i,2,stoichiometric_coeffs,system_state)
         events.append(reaction)
 
@@ -405,21 +406,21 @@ def path_uncoupled(N,w,t_max):
     for i in range(N-1):
 
         # left diffusion
-        left_diffusion = Diffusion(N,i,i+1,0,x0)
+        left_diffusion = Diffusion(N,i,i+1,0,system_state)
         events.append(left_diffusion)
 
         # right diffusion
-        right_diffusion = Diffusion(N,i+1,i,0,x0)
+        right_diffusion = Diffusion(N,i+1,i,0,system_state)
         events.append(right_diffusion)
 
-    t_grid[0] = 0.
+    clock[0] = 0.
     k = 1
 
     while k < Nt:
 
         x0[:] = X0[k-1]
         y0[:] = Y0[k-1]
-        system_state=(x0,y0)
+        system_state=[x0,y0]
 
         # find event with minimum absolute time
         firing_event = min(events, key=lambda e: e.wait_absolute)
@@ -427,21 +428,20 @@ def path_uncoupled(N,w,t_max):
         # get information needed from event
         delta = firing_event.wait_absolute
         stoichiometric_coeffs = firing_event.stoichiometric_coeffs
-
         # update events
         firing_event.fire(system_state,delta)
         # update all other events
+        events.pop(m)
         for e in events:
             e.no_fire(system_state,delta)
-
-
+        events.append(firing_event)
         # update system
-        t_grid[i] = t_grid[i-1]+delta
-        x0[k][:] = x0 + stoichiometric_coeffs[0]
-        y0[k][:] = y0 + stoichiometric_coeffs[1]
+        clock[k] = clock[k-1]+delta
+        X0[k][:] = x0 + stoichiometric_coeffs[0]
+        Y0[k][:] = y0 + stoichiometric_coeffs[1]
 
         k = k+1
-    return X0,Y0,t_grid
+    return X0,Y0,clock
 
 
 
@@ -459,37 +459,41 @@ class Event:
         self.update_rate(system_state)
         self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
 
-
-
     def fire(self,system_state,delta):
         self.update_rate(system_state)
-        self.time_internal = self.time_internal + self.rate*delta
         self.wait_internal = exponential0(1.)
-        self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
+        self.time_internal = self.time_internal + self.rate*delta
+        self.update_wait_absolute()
         return None
 
     def no_fire(self,system_state,delta):
         self.update_rate(system_state)
-        self.time_internal = self.time_internal + self.rate*delta
         # wait_internal remains unchanged
-        self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
+        self.time_internal = self.time_internal + self.rate*delta
+        self.update_wait_absolute()
         return None
-
 
     def update_rate(self,system_state):
         self.rate = 0.
         return None
 
+    def update_wait_absolute(self):
+        if self.rate>0:
+            self.wait_absolute = self.wait_internal/self.rate
+        else:
+            self.wait_absolute = exp_max
+        return None
 
 class Diffusion(Event):
     def __init__(self,mesh,voxel_out,voxel_in,species,system_state):
         self.voxel_out = voxel_out
         self.voxel_in = voxel_in
-        self.stoichiometric_coeffs = -identity(mesh)[voxel_out]+identity(mesh)[voxel_in]
+        self.species = species
+        self.stoichiometric_coeffs = [-identity(mesh)[voxel_out]+identity(mesh)[voxel_in],0]
         super().__init__(system_state)
 
     def update_rate(self,system_state):
-        self.rate = system_state[self.voxel_out]
+        self.rate = system_state[self.species][self.voxel_out]
         return None
 
 class Reaction(Event):
@@ -507,21 +511,132 @@ class Reaction(Event):
         self.rate = rate
         return None
 
-class Diffusion_SplitComman(Event):
-    pass
+class Diffusion_SplitCommon(Event):
+    def __init__(self,mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,species,system_state):
+        self.voxel_out_fine = voxel_out_fine
+        self.voxel_in_fine = voxel_in_fine
+        self.voxel_out_coarse = voxel_out_coarse
+        self.voxel_in_coarse = voxel_in_coarse
+        self.species = species
+        self.stoichiometric_coeffs
+         = [
+         -identity(mesh_fine)[voxel_out_fine]+identity(mesh_fine)[voxel_in_fine],0,
+         -identity(mesh_coarse)[voxel_out_coarse]+identity(mesh_coarse)[voxel_in_coarse],0
+         ]
+        super().__init__(system_state)
+
+    def update_rate(self,system_state):
+        a1 = system_state[self.species][self.voxel_out_fine]
+        a2 = system_state[1+self.species][self.voxel_out_coarse]
+        self.rate = min(a1,a2)
+        return None
+
 
 class Diffusion_SplitFine(Event):
-    pass
+    def __init__(self,mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,species,system_state):
+        self.voxel_out_fine = voxel_out_fine
+        self.voxel_in_fine = voxel_in_fine
+        self.voxel_out_coarse = voxel_out_coarse
+        self.voxel_in_coarse = voxel_in_coarse
+        self.species = species
+        self.stoichiometric_coeffs
+         = [
+         -identity(mesh_fine)[voxel_out_fine]+identity(mesh_fine)[voxel_in_fine],0,0,0
+         ]
+        super().__init__(system_state)
+
+    def update_rate(self,system_state):
+        a1 = system_state[self.species][self.voxel_out_fine]
+        a2 = system_state[1+self.species][self.voxel_out_coarse]
+        self.rate = rho(a1,a2)
+        return None
 
 class Diffusion_SplitCoarse(Event):
-    pass
+    def __init__(self,mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,species,system_state):
+        self.voxel_out_fine = voxel_out_fine
+        self.voxel_in_fine = voxel_in_fine
+        self.voxel_out_coarse = voxel_out_coarse
+        self.voxel_in_coarse = voxel_in_coarse
+        self.species = species
+        self.stoichiometric_coeffs
+         = [
+         0,0,-identity(mesh_coarse)[voxel_out_coarse]+identity(mesh_coarse)[voxel_in_coarse],0
+         ]
+        super().__init__(system_state)
+
+    def update_rate(self,system_state):
+        a1 = system_state[self.species][self.voxel_out_fine]
+        a2 = system_state[2+self.species][self.voxel_out_coarse]
+        self.rate = rho(a2,a1)
+        return None
 
 
-class Reaction_SplitComman(Event):
-    pass
+class Reaction_SplitCommon(Event):
+    def __init__(self,mesh_fine,mesh_coarse,refinement,voxel_fine,voxel_coarse,order,stoichiometric_coeffs,system_state):
+        self.voxel_fine = voxel_fine
+        self.voxel_coarse = voxel_coarse
+        self.order = order
+        self.stoichiometric_coeffs = stoichiometric_coeffs
+        self.refinement = refinement
+        super().__init__(system_state)
+
+    def update_rate(self,system_state):
+        # works for order =1,2
+        a1 = 1.
+        for i in range(self.order):
+            a1 = a1*system_state[i][self.voxel_fine]
+
+        a2 = 1.
+        for i in range(self.order):
+            a2 = a1*system_state[2+i][self.voxel_coarse]
+
+        self.rate = min(a1,a2/self.refinement)
+        return None
 
 class Reaction_SplitFine(Event):
-    pass
+    def __init__(self,mesh_fine,mesh_coarse,refinement,voxel_fine,voxel_coarse,order,stoichiometric_coeffs,system_state):
+        self.voxel_fine = voxel_fine
+        self.voxel_coarse = voxel_coarse
+        self.order = order
+        self.stoichiometric_coeffs = stoichiometric_coeffs
+        self.refinement = refinement
+        super().__init__(system_state)
+
+    def update_rate(self,system_state):
+        # works for order =1,2
+        a1 = 1.
+        for i in range(self.order):
+            a1 = a1*system_state[i][self.voxel_fine]
+
+        a2 = 1.
+        for i in range(self.order):
+            a2 = a1*system_state[2+i][self.voxel_coarse]
+
+        self.rate = rho(a1,a2/self.refinement)
+        return None
+
 
 class Reaction_SplitCoarse(Event):
-    pass
+    def __init__(self,mesh_fine,mesh_coarse,refinement,voxels_fine,voxel_coarse,order,stoichiometric_coeffs,system_state):
+        self.voxels_fine = voxels_fine
+        self.voxel_coarse = voxel_coarse
+        self.order = order
+        self.stoichiometric_coeffs = stoichiometric_coeffs
+        self.refinement = refinement
+        super().__init__(system_state)
+
+    def update_rate(self,system_state):
+        # works for order =1,2
+        a1 = 0.
+        for j in voxels_fine
+            aa = 1.
+            for i in range(self.order):
+                aa = aa*system_state[i][j]
+            a1 = a1 + aa
+
+        a2 = 1.
+        for i in range(self.order):
+            a2 = a1*system_state[2+i][self.voxel_coarse]
+
+        self.rate = rho(a1,a2)
+        return None
