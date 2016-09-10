@@ -82,7 +82,7 @@ def get_reaction(N0,N1,l,J,r_next):
 
 def path_coupled(N,J,level,w,t_max):
     Np = 100.
-    Nt = 300.
+    Nt = 30.
     t_grid = zeros(Nt)
 
     N0 = int(N/(pow(J,level)))     # fine grid
@@ -223,28 +223,38 @@ def path_coupled(N,J,level,w,t_max):
                 a_r_0c1_new = min(x0[i*J+m]*y0[i*J+m],x1[i]*y1[i]*pow(J,-1.))
                 a_r_0m1_new = rho(x0[i*J+m]*y0[i*J+m],x1[i]*y1[i]*pow(J,-1.))
 
-                if r_next == 0:
-                    t_r_0c1[i*J+m] = exponential0(a_r_0c1_new)
+                if a_r_0c1_new == 0:
+                    t_r_0c1[i*J+m] = exp_max
                 else:
-                    t_r_0c1[i*J+m] = (a_r_0c1[i*J+m]/a_r_0c1_new)*(t_r_0c1[i*J+m]-t_next)
+                    if r_next == 0 or a_r_0c1[i*J+m]==0:
+                        t_r_0c1[i*J+m] = exponential0(a_r_0c1_new)
+                    else:
+                        t_r_0c1[i*J+m] = (a_r_0c1[i*J+m]/a_r_0c1_new)*(t_r_0c1[i*J+m]-t_next)
 
-                if r_next == 1:
-                    t_r_0m1[i*J+m] = exponential0(a_r_0m1_new)
+                if a_r_0m1_new==0:
+                    t_r_0m1[i*J+m] = exp_max
                 else:
-                    t_r_0m1[i*J+m] = (a_r_0m1[i*J+m]/a_r_0m1_new)*(t_r_0m1[i*J+m]-t_next)
+                    if r_next == 1 or a_r_0m1[i*J+m]==0:
+                        t_r_0m1[i*J+m] = exponential0(a_r_0m1_new)
+                    else:
+                        t_r_0m1[i*J+m] = (a_r_0m1[i*J+m]/a_r_0m1_new)*(t_r_0m1[i*J+m]-t_next)
 
                 a_r_0c1[i*J+m] = a_r_0c1_new
                 a_r_0m1[i*J+m] = a_r_0m1_new
 
                 a_sum = a_sum +x0[i*J+m]*y0[i*J+m]
-            a_r_1m0_new = rho(a_sum,x1[i]*y1[i])
 
-            if r_next == 2:
-                t_r_1m0[i]  = exponential0(a_r_1m0_new)
+            a_r_1m0_new = rho(a_sum,x1[i]*y1[i])
+            if a_r_1m0_new==0:
+                    t_r_1m0[i] = exp_max
             else:
-                t_r_1m0[i] = (a_r_1m0[i]/a_r_1m0_new)*(t_r_1m0[i]-t_next)
+                if r_next == 2 or a_r_1m0[i]==0:
+                    t_r_1m0[i]  = exponential0(a_r_1m0_new)
+                else:
+                    t_r_1m0[i] = (a_r_1m0[i]/a_r_1m0_new)*(t_r_1m0[i]-t_next)
 
             a_r_0m1[i] = a_r_0m1_new
+
             # diffusion
             for i in range(N1-1):
 
@@ -252,69 +262,87 @@ def path_coupled(N,J,level,w,t_max):
                 a_dx_0m1_l_new = rho(w*x0[(i+1)*J],w*x1[i+1])
                 a_dx_1m0_l_new = rho(w*x1[i+1],w*x0[(i+1)*J])
 
-                a_dx_0c1_r_new = min(w*x0[i*J],w*x1[i])
-                a_dx_0m1_r_new = rho(w*x0[i*J],w*x1[i])
-                a_dx_1m0_r_new = rho(w*x1[i],w*x0[i*J])
 
-
-                if r_next == 3:
-                    t_dx_0c1_l[i] = exponential0(a_dx_0c1_r_new)
+                if a_dx_0c1_l_new ==0:
+                    t_dx_0c1_l[i] = exp_max
                 else:
-                    t_dx_0c1_l[i] = (a_dx_0c1_l[i]/a_dx_0c1_l_new)*(t_dx_0c1_l[i]-t_next)
+                    if r_next == 3 or a_dx_0c1_l[i]==0:
+                        t_dx_0c1_l[i] = exponential0(a_dx_0c1_l_new)
+                    else:
+                        t_dx_0c1_l[i] = (a_dx_0c1_l[i]/a_dx_0c1_l_new)*(t_dx_0c1_l[i]-t_next)
 
-                if r_next == 4:
-                    t_dx_0m1_l[i] = exponential0(a_dx_0m1_l_new)
+                if a_dx_0m1_l_new==0:
+                    t_dx_0m1_l[i] = exp_max
                 else:
-                    t_dx_0m1_l[i] = (a_dx_0m1_l[i]/a_dx_0m1_l_new)*(t_dx_0m1_l[i]-t_next)
+                    if r_next == 4 or a_dx_0m1_l[i]==0:
+                        t_dx_0m1_l[i] = exponential0(a_dx_0m1_l_new)
+                    else:
+                        t_dx_0m1_l[i] = (a_dx_0m1_l[i]/a_dx_0m1_l_new)*(t_dx_0m1_l[i]-t_next)
 
-                if r_next == 5:
-                    t_dx_1m0_l[i] = exponential0(a_dx_1m0_l_new)
+                if a_dx_1m0_l_new==0 or a_dx_1m0_l[i]==0:
+                    t_dx_1m0_l[i] = exp_max
                 else:
-                    t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)
-
-                if r_next == 7:
-                    t_dx_0c1_r[i] = exponential0(a_dx_0c1_r_new)
-                else:
-                    t_dx_0c1_r[i] = (a_dx_0c1_r[i]/a_dx_0c1_r_new)*(t_dx_0c1_r[i]-t_next)
-
-                if r_next == 8:
-                    t_dx_0m1_r[i] = exponential0(a_dx_0m1_r_new)
-                else:
-                    t_dx_0m1_r[i] = (a_dx_0m1_r[i]/a_dx_0m1_r_new)*(t_dx_0m1_r[i]-t_next)
-
-                if r_next == 9:
-                    t_dx_1m0_r[i] = exponential0(a_dx_1m0_r_new)
-                else:
-                    t_dx_1m0_r[i] = (a_dx_1m0_r[i]/a_dx_1m0_r_new)*(t_dx_1m0_r[i]-t_next)
-
-
-
+                    if r_next == 5:
+                        t_dx_1m0_l[i] = exponential0(a_dx_1m0_l_new)
+                    else:
+                        t_dx_1m0_l[i] = (a_dx_1m0_l[i]/a_dx_1m0_l_new)*(t_dx_1m0_l[i]-t_next)
 
                 a_dx_0c1_l[i] = a_dx_0c1_l_new
                 a_dx_0m1_l[i] = a_dx_0m1_l_new
                 a_dx_1m0_l[i] = a_dx_1m0_l_new
+
+                a_dx_0c1_r_new = min(w*x0[i*J],w*x1[i])
+                a_dx_0m1_r_new = rho(w*x0[i*J],w*x1[i])
+                a_dx_1m0_r_new = rho(w*x1[i],w*x0[i*J])
+
+                if a_dx_0c1_r_new==0:
+                    t_dx_0c1_r[i] = exp_max
+                else:
+                    if r_next == 7 or a_dx_0c1_r[i]==0:
+                        t_dx_0c1_r[i] = exponential0(a_dx_0c1_r_new)
+                    else:
+                        t_dx_0c1_r[i] = (a_dx_0c1_r[i]/a_dx_0c1_r_new)*(t_dx_0c1_r[i]-t_next)
+
+                if a_dx_0m1_r_new ==0:
+                    t_dx_0m1_r[i] = exp_max
+                else:
+                    if r_next == 8 or a_dx_0m1_r[i]==0:
+                        t_dx_0m1_r[i] = exponential0(a_dx_0m1_r_new)
+                    else:
+                        t_dx_0m1_r[i] = (a_dx_0m1_r[i]/a_dx_0m1_r_new)*(t_dx_0m1_r[i]-t_next)
+
+                if a_dx_1m0_r_new ==0:
+                    t_dx_1m0_r[i] = exp_max
+                else:
+                    if r_next == 9 or a_dx_1m0_r[i]==0:
+                        t_dx_1m0_r[i] = exponential0(a_dx_1m0_r_new)
+                    else:
+                        t_dx_1m0_r[i] = (a_dx_1m0_r[i]/a_dx_1m0_r_new)*(t_dx_1m0_r[i]-t_next)
+
                 a_dx_0c1_r[i] = a_dx_0c1_r_new
                 a_dx_0m1_r[i] = a_dx_0m1_r_new
                 a_dx_1m0_r[i] = a_dx_1m0_r_new
-
-
-
 
                 for m in range(J-1):
 
                     a_dx_0_l_new = w*x0[i*J+m+1]
                     a_dx_0_r_new = w*x0[i*J+m]
 
-
-                    if r_next == 6:
-                        t_dx_0_l[i*(J-1)+m] = exponential0(a_dx_0_l_new)
+                    if a_dx_0_l_new ==0:
+                        t_dx_0_l[i*(J-1)+m] = exp_max
                     else:
-                        t_dx_0_l[i*(J-1)+m] = (a_dx_0_l[i*(J-1)+m]/a_dx_0_l_new)*(t_dx_0_l[i*(J-1)+m]-t_next)
+                        if r_next == 6 or a_dx_0_l[i*(J-1)+m]==0:
+                            t_dx_0_l[i*(J-1)+m] = exponential0(a_dx_0_l_new)
+                        else:
+                            t_dx_0_l[i*(J-1)+m] = (a_dx_0_l[i*(J-1)+m]/a_dx_0_l_new)*(t_dx_0_l[i*(J-1)+m]-t_next)
 
-                    if r_next == 10:
-                        t_dx_0_r[i*(J-1)+m] = exponential0(a_dx_0_r_new)
+                    if a_dx_0_r_new ==0:
+                        t_dx_0_r[i*(J-1)+m] = exp_max
                     else:
-                        t_dx_0_r[i*(J-1)+m] = (a_dx_0_r[i*(J-1)+m]/a_dx_0_r_new)*(t_dx_0_r[i*(J-1)+m]-t_next)
+                        if r_next == 10 or a_dx_0_r[i*(J-1)+m]==0:
+                            t_dx_0_r[i*(J-1)+m] = exponential0(a_dx_0_r_new)
+                        else:
+                            t_dx_0_r[i*(J-1)+m] = (a_dx_0_r[i*(J-1)+m]/a_dx_0_r_new)*(t_dx_0_r[i*(J-1)+m]-t_next)
 
                     a_dx_0_l[i*(J-1)+m] = a_dx_0_l_new
                     a_dx_0_r[i*(J-1)+m] = a_dx_0_r_new
@@ -326,15 +354,16 @@ def path_coupled(N,J,level,w,t_max):
         T = array([min(t_r_0c1),min(t_r_0m1),min(t_r_1m0),
          min(t_dx_0c1_l),min(t_dx_0m1_l),min(t_dx_1m0_l),min(t_dx_0_l),
          min(t_dx_0c1_r),min(t_dx_0m1_r),min(t_dx_1m0_r),min(t_dx_0_r)])
-
         R = array([argmin(t_r_0c1),argmin(t_r_0m1),argmin(t_r_1m0),\
          argmin(t_dx_0c1_l),argmin(t_dx_0m1_l),argmin(t_dx_1m0_l),argmin(t_dx_0_l),\
          argmin(t_dx_0c1_r),argmin(t_dx_0m1_r),argmin(t_dx_1m0_r),argmin(t_dx_0_r)])
-        print("T = "+str(T))
+        #print("T = "+str(T))
         #print("R = "+str(R))
-        t_next = min(T[T>0])
-        print("t_next = "+str(t_next))
-        r_next = nonzero(T)[0][argmin(T[T>0])] # which type of reaction
+        t_next = min(T)
+        r_next = argmin(T) # which type of reaction
+        #print("T = "+str(T))
+        print("time     = "+str(t_next))
+        print("reaction = "+str(r_next))
         l = R[argmin(T)]  # spatial location of reaction
         v0,v1,u0,u1 = get_reaction(N0,N1,l,J,r_next)
 
@@ -343,6 +372,7 @@ def path_coupled(N,J,level,w,t_max):
         Y0[k][:] = y0 + u0
         Y1[k][:] = y1 + u1
         t_grid[k] = t_grid[k-1]+t_next
+        print("t_grid[k] = "+str(t_grid[k]))
         k = k+1
 
     return X0,X1,Y0,Y1,t_grid

@@ -14,6 +14,7 @@ print("t_grid = "+str(t_grid))
 N0 = int(N/(pow(J,level)))     # fine grid
 N1 = int(N/(pow(J,level+1))) # coarse grid
 
-plt.plot(t_grid,X0[:,10],'k-')
-plt.plot(t_grid,X1[:,10],'r-')
+plt.plot(range(len(t_grid)),t_grid,'k-')
+#plt.plot(t_grid,X0[:,10],'k-')
+#plt.plot(t_grid,X1[:,10],'r-')
 plt.show()
