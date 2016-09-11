@@ -188,7 +188,7 @@ class Reaction_SplitCoarse(Event):
     def update_rate(self,system_state):
         # works for order =1,2
         a1 = 0.
-        for j in voxels_fine:
+        for j in self.voxels_fine:
             aa = 1.
             for i in range(self.order):
                 aa = aa*system_state[i][j]
