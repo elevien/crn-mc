@@ -3,8 +3,8 @@ from events import *
 
 
 def path_coupled(N,J,level,w,t_max):
-    Np = 1000.
-    Nt = 1000.
+    Np =10.
+    Nt = 50000.
     clock = zeros(Nt)
 
     mesh_fine = int(N/(pow(J,level)))     # fine grid
@@ -18,14 +18,29 @@ def path_coupled(N,J,level,w,t_max):
     Y0 = zeros((Nt,mesh_fine))
     Y1 = zeros((Nt,mesh_coarse))
 
-    X0[0] = Np*ones(mesh_fine)*(pow(J,level))
-    Y0[0] = Np*ones(mesh_fine)*(pow(J,level))
-    X1[0] = Np*ones(mesh_coarse)*(pow(J,level+1))
-    Y1[0] = Np*ones(mesh_coarse)*(pow(J,level+1))
-    x0 = Np*ones(mesh_fine)*(pow(J,level))
-    y0 = Np*ones(mesh_fine)*(pow(J,level))
-    x1 = Np*ones(mesh_coarse)*(pow(J,level+1))
-    y1 = Np*ones(mesh_coarse)*(pow(J,level+1))
+    ICx = (Np*(np.sin(5*3.1459*np.arange(mesh_fine)/mesh_fine)+2)).astype(int)
+    ICy = (Np*(np.cos(1.4*3.1459*np.arange(mesh_fine)/mesh_fine)+2)).astype(int)
+    #ICy = Np*ones(mesh_fine)
+
+    ICx_coarse = zeros(mesh_coarse)
+    ICy_coarse = zeros(mesh_coarse)
+
+    for i in range(mesh_coarse):
+        ICx_coarse[i] = sum(ICx[J*i:J*(i+1)])
+        ICy_coarse[i] = sum(ICy[J*i:J*(i+1)])
+
+    X0[0] = ICx
+    Y0[0] = ICy
+    X1[0] = ICx_coarse
+    Y1[0] = ICy_coarse
+    x0 = ICx
+    y0 = ICy
+    x1 = ICx_coarse
+    y1 = ICy_coarse
+
+
+
+
     system_state= [x0,y0,x1,y1]
     # compute initial reaction rates and times
     # reaction kinetics
@@ -93,6 +108,18 @@ def path_coupled(N,J,level,w,t_max):
         reaction = Diffusion_SplitCoarse(mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,0,system_state)
         events.append(reaction)
 
+        # Y diffusion
+
+        reaction = Diffusion_SplitCommon(mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,1,system_state)
+        events.append(reaction)
+
+        reaction = Diffusion_SplitFine(mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,1,system_state)
+        events.append(reaction)
+
+        reaction = Diffusion_SplitCoarse(mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,1,system_state)
+        events.append(reaction)
+
+
         # right diffusion common
         voxel_out_fine  = (i+1)*J
         voxel_in_fine = (i+1)*J+1
@@ -109,6 +136,16 @@ def path_coupled(N,J,level,w,t_max):
         events.append(reaction)
 
 
+        reaction = Diffusion_SplitCommon(mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,1,system_state)
+        events.append(reaction)
+
+        reaction = Diffusion_SplitFine(mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,1,system_state)
+        events.append(reaction)
+
+        reaction = Diffusion_SplitCoarse(mesh_fine,mesh_coarse,voxel_out_fine,voxel_in_fine,voxel_out_coarse,voxel_in_coarse,1,system_state)
+        events.append(reaction)
+
+
 
 
         for m in range(J-1):
@@ -117,9 +154,17 @@ def path_coupled(N,J,level,w,t_max):
             left_diffusion = Diffusion(mesh_fine,i*J+m,i*J+m+1,0,system_state)
             events.append(left_diffusion)
 
+            left_diffusion = Diffusion(mesh_fine,i*J+m,i*J+m+1,1,system_state)
+            events.append(left_diffusion)
+
+
             # right diffusion
             right_diffusion = Diffusion(mesh_fine,i*J+m+1,i*J+m,0,system_state)
             events.append(right_diffusion)
+
+            right_diffusion = Diffusion(mesh_fine,i*J+m+1,i*J+m,1,system_state)
+            events.append(right_diffusion)
+
 
     clock[0] = 0.
     k = 1
@@ -140,6 +185,7 @@ def path_coupled(N,J,level,w,t_max):
         stoichiometric_coeffs = firing_event.stoichiometric_coeffs
         # update events
         firing_event.fire(system_state,delta)
+        #print("firing_event = "+str(firing_event))
         # update all other events
         events.pop(m)
         for e in events:

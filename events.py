@@ -11,8 +11,6 @@ def exponential0(rate):
     else:
         return exponential(1./rate)
 
-
-
 class Event:
 
     def __init__(self,system_state):
@@ -56,7 +54,7 @@ class Diffusion(Event):
         super().__init__(system_state)
 
     def update_rate(self,system_state):
-        self.rate = system_state[self.species][self.voxel_out]
+        self.rate = 20*system_state[self.species][self.voxel_out]
         return None
 
 class Reaction(Event):
@@ -90,7 +88,7 @@ class Diffusion_SplitCommon(Event):
     def update_rate(self,system_state):
         a1 = system_state[self.species][self.voxel_out_fine]
         a2 = system_state[1+self.species][self.voxel_out_coarse]
-        self.rate = min(a1,a2)
+        self.rate = 20*min(a1,a2)
         return None
 
 
@@ -109,7 +107,7 @@ class Diffusion_SplitFine(Event):
     def update_rate(self,system_state):
         a1 = system_state[self.species][self.voxel_out_fine]
         a2 = system_state[1+self.species][self.voxel_out_coarse]
-        self.rate = rho(a1,a2)
+        self.rate = 20*rho(a1,a2)
         return None
 
 class Diffusion_SplitCoarse(Event):
@@ -127,7 +125,7 @@ class Diffusion_SplitCoarse(Event):
     def update_rate(self,system_state):
         a1 = system_state[self.species][self.voxel_out_fine]
         a2 = system_state[2+self.species][self.voxel_out_coarse]
-        self.rate = rho(a2,a1)
+        self.rate = 20*rho(a2,a1)
         return None
 
 
