@@ -10,9 +10,6 @@ class Model:
         self.events.append(reaction)
         Return None
 
-    def init_reactions(self,stoichiometric_coeffs,voxel_in,voxel_out):
-        Return None
-
     def init_diffusions(self,stoichiometric_coeffs,voxel_in,voxel_out):
         for voxel in mesh.voxels:
             for neighbor in voxel.neighbors
