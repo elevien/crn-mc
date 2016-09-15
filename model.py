@@ -6,7 +6,7 @@ class Model:
     def __init__(self,species,mesh):
         self.mesh = mesh
         self.species = species
-        self.system_state = np.zeros((self.species,self.mesh.size))
+        self.system_state = [None]*self.species
         self.events = []
 
     def add_reaction(self,reactants,products):
@@ -15,7 +15,7 @@ class Model:
             self.events.append(reaction)
         return None
 
-    def init_diffusions(self,species):
+    def add_diffusions(self,species):
         for i in range(self.mesh.size):
             for j in range(self.mesh.size):
                 if self.mesh.topology[j,i]>0:
@@ -23,10 +23,44 @@ class Model:
                     self.events.append(diffusion)
         return None
 
-class SplitCoupledModels(Model):
-    def __init__(self,mesh_fine,mesh_coarse,coupling):
-        self.species = species
+
+
+class SplitCoupled(Model):
+    def __init__(self,spcies,mesh,coupling):
         self.coupling = coupling
-        self.system_state = np.zeros((2*self.species,self.mesh.size))
-        self.mesh_fine = model_fine
+        self.mesh = mesh # the fine mesh
+        self.species = species
+        self.system_state = [None]*self.species*2
         self.events = []
+
+    def add_reaction(self,reactants,products):
+        for i in range(self.mesh.size):
+            reaction = Reaction_SplitCommon(self,i,reactants,products)
+            self.events.append(reaction)
+            reaction = Reaction_SplitFine(self,i,reactants,products)
+            self.events.append(reaction)
+        for i in range(self.coupling):
+            reaction = Reaction_SplitCoarse(self,i,reactants,products)
+            self.events.append(reaction)
+
+
+
+    def add_diffusions(self,species):
+        for i in range(self.mesh.size):
+            for j in range(self.mesh.size):
+                if self.mesh.topology[j,i]>0:
+                    if self.coarse_strucure[j,i]>0:
+                        # add regular diffusion on fine mesh
+                        diffusion = Diffusion(self,i,j,species)
+                        self.events.append(diffusion)
+                    else:
+                        # add coupled diffusion
+                        # particiles on the coarse mesh live on a fine mesh but never
+                        # touch the fine mesh voxels
+                        diffusion = Diffusion_SplitCommon(self,i,j,species)
+                        self.events.append(diffusion)
+                        diffusion = Diffusion_SplitCoarse(self,i,j,species)
+                        self.events.append(diffusion)
+                        diffusion = Diffusion_SplitFine(self,i,j,species)
+                        self.events.append(diffusion)
+        return None
