@@ -16,18 +16,18 @@ class Event:
         self.model = model
         self.time_internal = 0.
         self.wait_internal = exponential0(1.)
-        self.update_rate(model.system_state)
+        self.update_rate()
         self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
 
     def fire(self,delta):
-        self.update_rate(model.system_state)
+        self.update_rate()
         self.wait_internal = exponential0(1.)
         self.time_internal = self.time_internal + self.rate*delta
         self.update_wait_absolute()
         return None
 
     def no_fire(self,delta):
-        self.update_rate(model.system_state)
+        self.update_rate()
         # wait_internal remains unchanged
         self.time_internal = self.time_internal + self.rate*delta
         self.update_wait_absolute()
@@ -56,24 +56,23 @@ class Diffusion(Event):
     def __str__(self):
         return "Diffusion of species "+str(self.species)+" from voxel "+str(self.voxel_in)+" to "+str(self.voxel_out)
 
-    def update_rate(self,system_state):
+    def update_rate(self):
         self.rate = self.model.system_state[self.species][self.voxel_out]
         return None
 
 
 class Reaction(Event):
-    def __init__(self,model,voxel,reactants,products,name):
+    def __init__(self,model,voxel,reactants,products):
         self.voxel = voxel
-        self.name  = name
         self.reactants = reactants
         self.products = products
         self.stoichiometric_coeffs = np.zeros((model.species,model.mesh.size))
         self.stoichiometric_coeffs[:,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
-        return "Reaction {"+self.name+"} in voxel "+str(self.voxel)
+        return "Reaction in voxel "+str(self.voxel)
 
-    def update_rate(self,system_state):
+    def update_rate(self):
         # works for order =1,2
         a = 1.
         for i in range(self.model.species):

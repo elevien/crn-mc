@@ -9,9 +9,9 @@ class Model:
         self.system_state = np.zeros((self.species,self.mesh.size))
         self.events = []
 
-    def add_reaction(self,reactants,products,name):
+    def add_reaction(self,reactants,products):
         for i in range(self.mesh.size):
-            reaction = Reaction(self,i,reactants,products,name)
+            reaction = Reaction(self,i,reactants,products)
             self.events.append(reaction)
         return None
 
