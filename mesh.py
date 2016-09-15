@@ -1,4 +1,5 @@
 import numpy as np
+
 class Mesh:
     def __init__(self,dimension,topology,geometry):
         self.size = len(topology)

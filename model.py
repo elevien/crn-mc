@@ -22,3 +22,11 @@ class Model:
                     diffusion =Diffusion(self,i,j,species)
                     self.events.append(diffusion)
         return None
+
+class SplitCoupledModels(Model):
+    def __init__(self,mesh_fine,mesh_coarse,coupling):
+        self.species = species
+        self.coupling = coupling
+        self.system_state = np.zeros((2*self.species,self.mesh.size))
+        self.mesh_fine = model_fine
+        self.events = []
