@@ -1,24 +1,17 @@
-from pylab import *
+import numpy as np
 class Mesh:
-    def __init__(self,topology):
+    def __init__(self,dimension,topology,geometry):
         self.size = len(topology)
-        self.topology = topology
-        self.voxels = []
+        self.topology = topology  # adjaceny matrix
+        self.geometry = geometry  # list of (x,y,z)
 
-        for i in range(self.size):
-            self.voxels.append(Voxel(1.,[]))
 
-        for i in range(self.size):
-            neighbors = []
-            for j in range(self.size):
-                if self.topology[j,i]>0:
-                    neighbors.append(self.voxels[j])
-            self.voxels[i].add_neighbor(Voxel(1.,neighbors))
+def make_lattice1d(Nx):
+    topology = np.zeros((Nx,Nx))
+    d = np.ones(Nx-1)
+    topology = np.diag(d,1)+np.diag(d,-1)
+    mesh  = Mesh(1,topology,[])
+    return mesh
 
-class Voxel:
-    def __init__(self,volume,neighbors):
-        self.volume = volume
-        self.neighbors = []
-
-    def add_neighbor(self,voxel):
-        self.neighbors.append(voxel)
+def make_lattice2d(Nx,Ny):
+    return mesh
