@@ -26,11 +26,11 @@ class Model:
 
 
 class SplitCoupled(Model):
-    def __init__(self,spcies,mesh,coupling):
+    def __init__(self,species,mesh,coupling):
         self.coupling = coupling
         self.mesh = mesh # the fine mesh
         self.species = species
-        self.system_state = [None]*self.species*2
+        self.system_state = [None]*self.species
         self.events = []
 
     def add_reaction(self,reactants,products):
@@ -49,7 +49,7 @@ class SplitCoupled(Model):
         for i in range(self.mesh.size):
             for j in range(self.mesh.size):
                 if self.mesh.topology[j,i]>0:
-                    if self.coarse_strucure[j,i]>0:
+                    if self.coupling[j,i]>0:
                         # add regular diffusion on fine mesh
                         diffusion = Diffusion(self,i,j,species)
                         self.events.append(diffusion)
