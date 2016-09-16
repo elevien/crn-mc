@@ -1,37 +1,35 @@
-import matplotlib.pyplot as plt
-from coupled_bimolecular import *
+from mesh import *
+from model import *
+from simulation import *
+from pylab import *
 
 
-N = 50
-J = 10
-level = 0
-w = 1.
-T = 1.
-mesh_fine = int(N/(pow(J,level)))     # fine grid
-mesh_coarse  = int(N/(pow(J,level+1))) # coarse grid
-X0,Y0,X1,Y1,clock = path_coupled(N,J,level,w,T)
-#for i in events:
-#    print(i.wait_absolute)
+Nx = 50
+J = 2;
+Nspecies = 2
+mesh = make_lattice1d(Nx)
+coupling = []*(Nx/J)
+for i in coupling:
+    i = range()
 
-plt.plot(range(mesh_fine),X0[0],'k--')
-plt.plot(range(mesh_fine),Y0[0],'r--')
 
-plt.plot(range(mesh_fine),X0[-1],'k-')
-plt.plot(range(mesh_fine),Y0[-1],'r-')
-#plt.plot(range(mesh_fine),Y0[-1],'g-')
+#model = Model(Nspecies,mesh_fine)
+#model.system_state = 50*ones((Nspecies,Nx))
+#model.add_diffusions(0)
+#model.add_diffusions(1)
 
-X1_onfine = zeros(mesh_fine)
-for i in range(mesh_coarse):
-    X1_onfine[J*i:J*(i+1)] = X1[-1,i]/J
-plt.step(range(mesh_fine),X1_onfine,'g-')
-#plt.plot(clock,X0[:,0],'k-')
-#plt.plot(clock,X0[:,1],'r+')
-#plt.plot(clock,X1[:,0]/J,'g--')
-#x0 =0
-#for i in range(J):
-#    x0 = x0 + X0[:,1*J+i]
-#plt.plot(clock,x0,'k-')
-#ax = plt.gca()
+#r = array([1,1])
+#p = array([0,0])
+#model.add_reaction(r,p)
 
-#ax.imshow(X1, extent=[0,100,0,1], aspect=100,interpolation="none")
+
+
+path,clock = next_reaction(model,10)
+#print(clock)
+#print(path)
+
+plt.plot(range(Nx),path[-1,0],'k-')
+plt.plot(range(Nx),path[-1,1],'k--')
+
+
 plt.show()

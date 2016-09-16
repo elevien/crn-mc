@@ -14,7 +14,6 @@ def make_lattice1d(Nx):
     mesh  = Mesh(1,topology,[])
     return mesh
 
-
 # need to implement
 def make_lattice2d(Nx,Ny):
     return None
