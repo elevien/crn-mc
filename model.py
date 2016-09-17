@@ -77,13 +77,13 @@ def make_coupledSS(system_state,coupling):
     system_state_coupled = [None]*2*Nspecies
     system_state_coupled[0:Nspecies] = system_state
     system_state_coupled[Nspecies:2*Nspecies] = np.zeros((Nspecies,Nx))
-    print(system_state_coupled)
+    # this could be cleaned up a bit
     for i in range(Nx):
         if i == get_coarseMesh_voxel(i,coupling):
-            j = i
-            while coupling[i,j]>0 and j<Nx-1:
-                for k in range(Nspecies):
-                    system_state_coupled[Nspecies+k][i] = \
-                    system_state_coupled[Nspecies+k][i] + system_state[k,j]
-                j = j+1
+            for k in range(Nspecies):
+                n = 0
+                for j in range(Nx):
+                    if coupling[i,j]>0:
+                        n = n + system_state[k,j]
+                system_state_coupled[Nspecies+k][i] = n
     return system_state_coupled

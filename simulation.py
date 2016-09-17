@@ -12,7 +12,6 @@ def next_reaction(model,T):
         delta = firing_event.wait_absolute
         stoichiometric_coeffs = firing_event.stoichiometric_coeffs
         firing_event.fire(delta)
-        print(firing_event)
         model.events.pop(m)
         for e in model.events:
             e.no_fire(delta)
