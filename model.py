@@ -39,10 +39,9 @@ class SplitCoupled(Model):
             self.events.append(reaction)
             reaction = Reaction_SplitFine(self,i,reactants,products)
             self.events.append(reaction)
-        for i in range(self.coupling):
-            reaction = Reaction_SplitCoarse(self,i,reactants,products)
-            self.events.append(reaction)
-
+            if i == get_coarseMesh_voxel(i,self.coupling): # only do this once per subvoxel
+                reaction = Reaction_SplitCoarse(self,i,reactants,products)
+                self.events.append(reaction)
 
 
     def add_diffusions(self,species):
