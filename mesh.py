@@ -5,7 +5,7 @@ class Mesh:
         self.size = len(topology)
         self.dimension = dimension
         self.topology = topology  # adjaceny matrix
-        self.geometry = geometry  # list of (x,y,z)
+        self.geometry = geometry
 
 def get_coarseMesh_voxel(voxel,coupling):
     # returns the coarse mesh voxel associated with

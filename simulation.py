@@ -1,7 +1,7 @@
 from model import *
 
 def next_reaction(model,T):
-    Nt = 100;
+    Nt = 1000;
     path = np.zeros((Nt,len(model.system_state),model.mesh.size))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state

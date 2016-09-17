@@ -9,6 +9,7 @@ def rho(u,v):
 
 def exponential0(rate):
     if (rate <= 0):
+        print("Warning: all zero rates")
         return exp_max
     else:
         return np.random.exponential(1./rate)
@@ -160,8 +161,8 @@ class Reaction_SplitCommon(Event):
         a2 = 1.
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
-                a1 = a1*self.model.system_state[i,self.voxel]
-                a2 = a2*self.model.system_state[self.model.Nspecies+i,self.voxel_coarse]
+                a1 = a1*self.model.system_state[i][self.voxel]
+                a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
         self.rate = min(a1,a2/np.count_nonzero(self.model.coupling[self.voxel]))
         return None
 
@@ -181,8 +182,8 @@ class Reaction_SplitFine(Event):
         a2 = 1.
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
-                a1 = a1*self.model.system_state[i,self.voxel]
-                a2 = a2*self.model.system_state[self.model.Nspecies+i,self.voxel_coarse]
+                a1 = a1*self.model.system_state[i][self.voxel]
+                a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
         self.rate = min(a1,a2/len(self.model.coupling[self.voxel]))
         return None
 
@@ -207,13 +208,13 @@ class Reaction_SplitCoarse(Event):
             aa = 1.
             for i in range(self.model.Nspecies):
                 if self.reactants[i]>0:
-                    aa = aa*self.model.system_state[i,j]
+                    aa = aa*self.model.system_state[i][j]
             a1 = a1 + aa
 
         a2 = 1.
 
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
-                a2 = a2*self.model.system_state[self.model.Nspecies+i,self.voxel_coarse]
+                a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
         self.rate = rho(a1,a2)
         return None
