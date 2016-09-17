@@ -23,6 +23,8 @@ def next_reaction(model,T):
         model.system_state =  model.system_state + stoichiometric_coeffs
         if np.mean(model.system_state[model.system_state  <= 0]) <0:
             print("Warning: negative species count from event = " + str(firing_event))
+            print(model.system_state[firing_event.species][firing_event.voxel_out])
+            print(np.argmin(model.system_state[firing_event.species]))
         path[k][:] = model.system_state
         k = k+1
     return path,clock
