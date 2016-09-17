@@ -4,8 +4,8 @@ from simulation import *
 from pylab import *
 
 
-Nx = 20
-J =5
+Nx = 6
+J =2
 Nspecies = 2
 mesh,coupling = make_lattice1d_coupled(Nx,J)
 model = SplitCoupled(Nspecies,mesh,coupling)

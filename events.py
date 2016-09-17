@@ -104,7 +104,7 @@ class Diffusion_SplitCommon(Event):
 
     def update_rate(self):
         a1 = self.model.system_state[self.species][self.voxel_out]
-        a2 = self.model.system_state[2*self.species][self.voxel_out_coarse]
+        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
         self.rate = min(a1,a2)
         return None
 
@@ -117,12 +117,12 @@ class Diffusion_SplitFine(Event):
         self.voxel_in_coarse = get_coarseMesh_voxel(voxel_in,model.coupling)
         self.species = species
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.size)[self.voxel_out_coarse]+np.identity(model.mesh.size)[self.voxel_in_coarse]
+        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.size)[self.voxel_out]+np.identity(model.mesh.size)[self.voxel_in]
         super().__init__(model)
 
     def update_rate(self):
         a1 = self.model.system_state[self.species][self.voxel_out]
-        a2 = self.model.system_state[2*self.species][self.voxel_out_coarse]
+        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
         self.rate = rho(a1,a2)
         return None
 
@@ -139,7 +139,7 @@ class Diffusion_SplitCoarse(Event):
 
     def update_rate(self):
         a1 = self.model.system_state[self.species][self.voxel_out]
-        a2 = self.model.system_state[2*self.species][self.voxel_out_coarse]
+        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
         self.rate = rho(a2,a1)
         return None
 

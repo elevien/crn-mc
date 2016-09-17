@@ -1,7 +1,8 @@
 from model import *
+import numpy as np
 
 def next_reaction(model,T):
-    Nt = 1000;
+    Nt = 5000;
     path = np.zeros((Nt,len(model.system_state),model.mesh.size))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
@@ -20,6 +21,9 @@ def next_reaction(model,T):
         clock[k] = clock[k-1]+delta
 
         model.system_state =  model.system_state + stoichiometric_coeffs
+        if np.mean(model.system_state[model.system_state  <= 0]) <0:
+            print("Warning: negative species count")
+            print("Firing event = "+str(firing_event))
         path[k][:] = model.system_state
         k = k+1
     return path,clock
