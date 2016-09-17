@@ -3,10 +3,10 @@ from mesh import *
 from events import *
 
 class Model:
-    def __init__(self,species,mesh):
+    def __init__(self,Nspecies,mesh):
         self.mesh = mesh
-        self.species = species
-        self.system_state = [None]*self.species
+        self.Nspecies = Nspecies
+        self.system_state = [None]*self.Nspecies
         self.events = []
 
     def add_reaction(self,reactants,products):
@@ -26,11 +26,11 @@ class Model:
 
 
 class SplitCoupled(Model):
-    def __init__(self,species,mesh,coupling):
+    def __init__(self,Nspecies,mesh,coupling):
         self.coupling = coupling
         self.mesh = mesh # the fine mesh
-        self.species = species
-        self.system_state = [None]*self.species
+        self.Nspecies = Nspecies
+        self.system_state = [None]*2*self.Nspecies
         self.events = []
 
     def add_reaction(self,reactants,products):
@@ -49,7 +49,7 @@ class SplitCoupled(Model):
         for i in range(self.mesh.size):
             for j in range(self.mesh.size):
                 if self.mesh.topology[j,i]>0:
-                    if self.coupling[j,i]>0:
+                    if self.coupling[j,i]>0: # if i and j are in the same "subvoxel"
                         # add regular diffusion on fine mesh
                         diffusion = Diffusion(self,i,j,species)
                         self.events.append(diffusion)

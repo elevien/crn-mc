@@ -1,7 +1,7 @@
 from model import *
 
 def next_reaction(model,T):
-    Nt = 1000;
+    Nt = 100;
     path = np.zeros((Nt,len(model.system_state),model.mesh.size))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
@@ -19,7 +19,7 @@ def next_reaction(model,T):
         model.events.append(firing_event)
         # update system
         clock[k] = clock[k-1]+delta
-        
+
         model.system_state =  model.system_state + stoichiometric_coeffs
         path[k][:] = model.system_state
         k = k+1

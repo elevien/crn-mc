@@ -7,6 +7,18 @@ class Mesh:
         self.topology = topology  # adjaceny matrix
         self.geometry = geometry  # list of (x,y,z)
 
+def get_coarseMesh_voxel(voxel,coupling):
+    # returns the coarse mesh voxel associated with
+    # voxel by the coupling
+
+    # by convention I take the coarse mesh voxel to by the smallest
+    # index coupled to voxel according to coupling
+    i = 0
+    while coupling[voxel,i]<1:
+        i = i+1
+    return i
+
+
 def make_lattice1d(Nx):
     topology = np.zeros((Nx,Nx))
     d = np.ones(Nx-1)
@@ -20,7 +32,6 @@ def make_lattice1d_coupled(Nx,J):
     d = np.ones(Nx-1)
     topology = np.diag(d,1)+np.diag(d,-1)
     mesh  = Mesh(1,topology,[])
-
     for i in range(int(Nx/J)):
         coupling[i*J:(i+1)*J,i*J:(i+1)*J] = np.ones((J,J))
     return mesh,coupling
