@@ -78,7 +78,7 @@ class Reaction(Event):
     def update_rate(self):
         # works for order =1,2
         a = 1.
-        for i in range(self.model.species):
+        for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
                 a = a*self.model.system_state[i,self.voxel]
         self.rate = a
