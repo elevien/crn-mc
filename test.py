@@ -5,9 +5,13 @@ from pylab import *
 
 
 Nx = 4
+L = 1.
 J =2
+D0 = 1.
+D1 = 3.
+
 Nspecies = 2
-mesh,coupling = make_lattice1d_coupled(Nx,J)
+mesh,coupling = make_lattice1d_coupled(Nx,L,J)
 model = SplitCoupled(Nspecies,mesh,coupling)
 model_uncoupled = Model(Nspecies,mesh)
 
@@ -15,18 +19,15 @@ model_uncoupled = Model(Nspecies,mesh)
 ic = make_coupledSS(5*ones((Nspecies,Nx)),coupling)
 model.system_state = ic
 model_uncoupled.system_state = 5*ones((Nspecies,Nx))
-model.add_diffusions(0)
-model.add_diffusions(1)
-model_uncoupled.add_diffusions(0)
-model_uncoupled.add_diffusions(1)
+model.add_diffusions(0,D0)
+model.add_diffusions(1,D1)
+model_uncoupled.add_diffusions(0,D0)
+model_uncoupled.add_diffusions(1,D1)
 
 r = array([-1,-1])
 p = array([0,0])
 model.add_reaction(r,p)
 model_uncoupled.add_reaction(r,p)
-
-
-
 
 path,clock = next_reaction(model,10)
 path_uncoupled,clock_uncoupled = next_reaction(model_uncoupled,10)

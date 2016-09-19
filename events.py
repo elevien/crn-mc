@@ -48,19 +48,20 @@ class Event:
         return None
 
 class Diffusion(Event):
-    def __init__(self,model,voxel_in,voxel_out,species):
+    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
         self.voxel_out = voxel_out
         self.voxel_in = voxel_in
         self.species = species
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.size)[voxel_out]+np.identity(model.mesh.size)[voxel_in]
+        self.diffusivity = diffusivity
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[voxel_out]+np.identity(model.mesh.Nvoxels)[voxel_in]
         super().__init__(model)
 
     def __str__(self):
         return "Diffusion of species "+str(self.species)+" from voxel "+str(self.voxel_in)+" to "+str(self.voxel_out)
 
     def update_rate(self):
-        self.rate = self.model.system_state[self.species][self.voxel_out]
+        self.rate = self.diffusivity*self.model.system_state[self.species][self.voxel_out]
         return None
 
 
@@ -69,7 +70,7 @@ class Reaction(Event):
         self.voxel = voxel
         self.reactants = reactants
         self.products = products
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[:,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
@@ -90,57 +91,60 @@ class Reaction(Event):
 
 
 class Diffusion_SplitCommon(Event):
-    def __init__(self,model,voxel_in,voxel_out,species):
+    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
         self.voxel_out = voxel_out
         self.voxel_in = voxel_in
         self.voxel_out_coarse = get_coarseMesh_voxel(voxel_out,model.coupling)
         self.voxel_in_coarse = get_coarseMesh_voxel(voxel_in,model.coupling)
         self.species = species
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.size)[voxel_out]+np.identity(model.mesh.size)[voxel_in]
+        self.diffusivity = diffusivity
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[voxel_out]+np.identity(model.mesh.Nvoxels)[voxel_in]
 
-        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.size)[self.voxel_out_coarse]+np.identity(model.mesh.size)[self.voxel_in_coarse]
+        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_out_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
         super().__init__(model)
 
     def update_rate(self):
         a1 = self.model.system_state[self.species][self.voxel_out]
         a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
-        self.rate = min(a1,a2)
+        self.rate = self.diffusivity*min(a1,a2)
         return None
 
 
 class Diffusion_SplitFine(Event):
-    def __init__(self,model,voxel_in,voxel_out,species):
+    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
         self.voxel_out = voxel_out
         self.voxel_in = voxel_in
         self.voxel_out_coarse = get_coarseMesh_voxel(voxel_out,model.coupling)
         self.voxel_in_coarse = get_coarseMesh_voxel(voxel_in,model.coupling)
         self.species = species
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.size)[self.voxel_out]+np.identity(model.mesh.size)[self.voxel_in]
+        self.diffusivity = diffusivity
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[self.voxel_out]+np.identity(model.mesh.Nvoxels)[self.voxel_in]
         super().__init__(model)
 
     def update_rate(self):
         a1 = self.model.system_state[self.species][self.voxel_out]
         a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
-        self.rate = rho(a1,a2)
+        self.rate = self.diffusivity*rho(a1,a2)
         return None
 
 class Diffusion_SplitCoarse(Event):
-    def __init__(self,model,voxel_in,voxel_out,species):
+    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
         self.voxel_out = voxel_out
         self.voxel_in = voxel_in
         self.voxel_out_coarse = get_coarseMesh_voxel(voxel_out,model.coupling)
         self.voxel_in_coarse = get_coarseMesh_voxel(voxel_in,model.coupling)
         self.species = species
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
-        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.size)[self.voxel_out_coarse]+np.identity(model.mesh.size)[self.voxel_in_coarse]
+        self.diffusivity = diffusivity
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_out_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
         super().__init__(model)
 
     def update_rate(self):
         a1 = self.model.system_state[self.species][self.voxel_out]
         a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
-        self.rate = rho(a2,a1)
+        self.rate = self.diffusivity*rho(a2,a1)
         return None
 
 
@@ -150,7 +154,7 @@ class Reaction_SplitCommon(Event):
         self.voxel_coarse = get_coarseMesh_voxel(voxel,model.coupling)
         self.reactants = reactants
         self.products = products
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
         self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
         super().__init__(model)
@@ -172,7 +176,7 @@ class Reaction_SplitFine(Event):
         self.voxel_coarse = get_coarseMesh_voxel(voxel,model.coupling)
         self.reactants = reactants
         self.products = products
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
@@ -195,7 +199,7 @@ class Reaction_SplitCoarse(Event):
         self.voxel_coarse = get_coarseMesh_voxel(voxel,model.coupling)
         self.reactants = reactants
         self.products = products
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.size))
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
         super().__init__(model)
 

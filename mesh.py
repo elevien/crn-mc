@@ -2,10 +2,10 @@ import numpy as np
 
 class Mesh:
     def __init__(self,dimension,topology,geometry):
-        self.size = len(topology)
+        self.Nvoxels = len(topology)
         self.dimension = dimension
         self.topology = topology  # adjaceny matrix
-        self.geometry = geometry
+        self.geometry = geometry  # list of (volume,)
 
 def get_coarseMesh_voxel(voxel,coupling):
     # returns the coarse mesh voxel associated with
@@ -19,14 +19,15 @@ def get_coarseMesh_voxel(voxel,coupling):
     return i
 
 
-def make_lattice1d(Nx):
+def make_lattice1d(Nx,L):
     topology = np.zeros((Nx,Nx))
     d = np.ones(Nx-1)
     topology = np.diag(d,1)+np.diag(d,-1)
+    geometry = np.diag(d,1)+np.diag(d,-1)
     mesh  = Mesh(1,topology,[])
     return mesh
 
-def make_lattice1d_coupled(Nx,J):
+def make_lattice1d_coupled(Nx,L,J):
     topology = np.zeros((Nx,Nx))
     coupling = np.zeros((Nx,Nx))
     d = np.ones(Nx-1)

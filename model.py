@@ -10,16 +10,16 @@ class Model:
         self.events = []
 
     def add_reaction(self,reactants,products):
-        for i in range(self.mesh.size):
+        for i in range(self.mesh.Nvoxels):
             reaction = Reaction(self,i,reactants,products)
             self.events.append(reaction)
         return None
 
-    def add_diffusions(self,species):
-        for i in range(self.mesh.size):
-            for j in range(self.mesh.size):
+    def add_diffusions(self,species,diffusivity):
+        for i in range(self.mesh.Nvoxels):
+            for j in range(self.mesh.Nvoxels):
                 if self.mesh.topology[j,i]>0:
-                    diffusion =Diffusion(self,i,j,species)
+                    diffusion =Diffusion(self,i,j,species,diffusivity)
                     self.events.append(diffusion)
         return None
 
@@ -40,7 +40,7 @@ class SplitCoupled(Model):
         self.events = []
 
     def add_reaction(self,reactants,products):
-        for i in range(self.mesh.size):
+        for i in range(self.mesh.Nvoxels):
             reaction = Reaction_SplitCommon(self,i,reactants,products)
             self.events.append(reaction)
             reaction = Reaction_SplitFine(self,i,reactants,products)
@@ -50,22 +50,22 @@ class SplitCoupled(Model):
                 self.events.append(reaction)
 
 
-    def add_diffusions(self,species):
-        for i in range(self.mesh.size):
-            for j in range(self.mesh.size):
+    def add_diffusions(self,species,diffusivity):
+        for i in range(self.mesh.Nvoxels):
+            for j in range(self.mesh.Nvoxels):
                 if self.mesh.topology[j,i]>0:
                     if self.coupling[j,i]>0: # if i and j are in the same "subvoxel"
                         # add regular diffusion on fine mesh
-                        diffusion = Diffusion(self,i,j,species)
+                        diffusion = Diffusion(self,i,j,species,diffusivity)
                         self.events.append(diffusion)
                     else:
                         # add coupled diffusion
                         # various diffusion classes handle getting the "stoichiometry" right
-                        diffusion = Diffusion_SplitCommon(self,i,j,species)
+                        diffusion = Diffusion_SplitCommon(self,i,j,species,diffusivity)
                         self.events.append(diffusion)
-                        diffusion = Diffusion_SplitCoarse(self,i,j,species)
+                        diffusion = Diffusion_SplitCoarse(self,i,j,species,diffusivity)
                         self.events.append(diffusion)
-                        diffusion = Diffusion_SplitFine(self,i,j,species)
+                        diffusion = Diffusion_SplitFine(self,i,j,species,diffusivity)
                         self.events.append(diffusion)
         return None
 
