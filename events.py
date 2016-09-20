@@ -207,10 +207,10 @@ class Reaction_SplitCoarse(Event):
 
         #
         a1 = 0.
-        for j in self.model.coupling[self.voxel]:
+        for j in range(self.model.mesh.Nvoxels):
             aa = 1.
             for i in range(self.model.Nspecies):
-                if self.reactants[i]>0:
+                if self.reactants[i]>0 and self.model.coupling[self.voxel,j]>0:
                     aa = aa*self.model.system_state[i][j]
             a1 = a1 + aa
 

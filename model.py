@@ -50,6 +50,7 @@ class SplitCoupled(Model):
                 self.events.append(reaction)
 
 
+
     def add_diffusions(self,species,diffusivity):
         for i in range(self.mesh.Nvoxels):
             for j in range(self.mesh.Nvoxels):

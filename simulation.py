@@ -28,6 +28,7 @@ def next_reaction(model,T):
 
         if len(model.system_state[model.system_state  <0]) >0:  ## DB
             print("Warning: negative species count from event = " + str(firing_event))  ## DB
+            break;
         path[k][:] = model.system_state
         k = k+1
     return path,clock

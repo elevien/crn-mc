@@ -27,10 +27,8 @@ def make_lattice1d(Nx,L):
     topology = np.diag(d,1)+np.diag(d,-1)
     geometry = np.zeros((Nx,2))
     h = L/Nx
-    print(h)
     geometry[:,0] = h*np.ones(Nx)
     geometry[:,1] = np.linspace(0,L-h,Nx)
-    print(geometry)
     mesh  = Mesh(1,topology,geometry)
     return mesh
 
