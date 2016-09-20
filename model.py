@@ -6,7 +6,7 @@ class Model:
     def __init__(self,Nspecies,mesh):
         self.mesh = mesh
         self.Nspecies = Nspecies
-        self.system_state = [None]*self.Nspecies
+        self.system_state = np.zeros((self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
     def add_reaction(self,reactants,products):
@@ -18,7 +18,7 @@ class Model:
     def add_diffusions(self,species,diffusivity):
         for i in range(self.mesh.Nvoxels):
             for j in range(self.mesh.Nvoxels):
-                if self.mesh.topology[j,i]>0:
+                if self.mesh.topology[i,j]>0:
                     diffusion =Diffusion(self,i,j,species,diffusivity)
                     self.events.append(diffusion)
         return None
@@ -36,7 +36,7 @@ class SplitCoupled(Model):
         # but only certian voxels store information for
         # coarse mesh. See get_coarseMesh_voxel(voxel,coupling)
 
-        self.system_state = [None]*2*self.Nspecies
+        self.system_state = np.zeros((2*self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
     def add_reaction(self,reactants,products):

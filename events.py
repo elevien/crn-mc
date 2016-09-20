@@ -9,7 +9,7 @@ def rho(u,v):
 
 def exponential0(rate):
     if (rate <= 0):
-        print("Warning: all zero rates")
+        print("Warning: next reaction at t = infinity")
         return exp_max
     else:
         return np.random.exponential(1./rate)
@@ -37,7 +37,6 @@ class Event:
         return None
 
     def update_rate(self):
-        self.rate = 0.
         return None
 
     def update_wait_absolute(self):
@@ -48,20 +47,20 @@ class Event:
         return None
 
 class Diffusion(Event):
-    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
-        self.voxel_out = voxel_out
+    def __init__(self,model,voxel,voxel_in,species,diffusivity):
+        self.voxel = voxel
         self.voxel_in = voxel_in
         self.species = species
         self.diffusivity = diffusivity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[voxel_out]+np.identity(model.mesh.Nvoxels)[voxel_in]
+        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[self.voxel]+np.identity(model.mesh.Nvoxels)[self.voxel_in]
         super().__init__(model)
 
     def __str__(self):
-        return "Diffusion of species "+str(self.species)+" from voxel "+str(self.voxel_in)+" to "+str(self.voxel_out)
+        return "Diffusion of species "+str(self.species)+" from voxel "+str(self.voxel)+" to "+str(self.voxel_in)
 
     def update_rate(self):
-        self.rate = self.diffusivity*self.model.system_state[self.species][self.voxel_out]
+        self.rate = self.diffusivity*self.model.system_state[self.species][self.voxel]
         return None
 
 
@@ -91,59 +90,59 @@ class Reaction(Event):
 
 
 class Diffusion_SplitCommon(Event):
-    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
-        self.voxel_out = voxel_out
+    def __init__(self,model,voxel,voxel_in,species,diffusivity):
+        self.voxel = voxel
         self.voxel_in = voxel_in
-        self.voxel_out_coarse = get_coarseMesh_voxel(voxel_out,model.coupling)
-        self.voxel_in_coarse = get_coarseMesh_voxel(voxel_in,model.coupling)
+        self.voxel_coarse = get_coarseMesh_voxel(self.voxel,model.coupling)
+        self.voxel_in_coarse = get_coarseMesh_voxel(self.voxel_in,model.coupling)
         self.species = species
         self.diffusivity = diffusivity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[voxel_out]+np.identity(model.mesh.Nvoxels)[voxel_in]
+        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[voxel]+np.identity(model.mesh.Nvoxels)[voxel_in]
 
-        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_out_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
+        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
         super().__init__(model)
 
     def update_rate(self):
-        a1 = self.model.system_state[self.species][self.voxel_out]
-        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
+        a1 = self.model.system_state[self.species][self.voxel]
+        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_coarse]
         self.rate = self.diffusivity*min(a1,a2)
         return None
 
 
 class Diffusion_SplitFine(Event):
-    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
-        self.voxel_out = voxel_out
+    def __init__(self,model,voxel,voxel_in,species,diffusivity):
+        self.voxel = voxel
         self.voxel_in = voxel_in
-        self.voxel_out_coarse = get_coarseMesh_voxel(voxel_out,model.coupling)
-        self.voxel_in_coarse = get_coarseMesh_voxel(voxel_in,model.coupling)
+        self.voxel_coarse = get_coarseMesh_voxel(self.voxel,model.coupling)
+        self.voxel_in_coarse = get_coarseMesh_voxel(self.voxel_in,model.coupling)
         self.species = species
         self.diffusivity = diffusivity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[self.voxel_out]+np.identity(model.mesh.Nvoxels)[self.voxel_in]
+        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[self.voxel]+np.identity(model.mesh.Nvoxels)[self.voxel_in]
         super().__init__(model)
 
     def update_rate(self):
-        a1 = self.model.system_state[self.species][self.voxel_out]
-        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
+        a1 = self.model.system_state[self.species][self.voxel]
+        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_coarse]
         self.rate = self.diffusivity*rho(a1,a2)
         return None
 
 class Diffusion_SplitCoarse(Event):
-    def __init__(self,model,voxel_in,voxel_out,species,diffusivity):
-        self.voxel_out = voxel_out
+    def __init__(self,model,voxel,voxel_in,species,diffusivity):
+        self.voxel = voxel
         self.voxel_in = voxel_in
-        self.voxel_out_coarse = get_coarseMesh_voxel(voxel_out,model.coupling)
-        self.voxel_in_coarse = get_coarseMesh_voxel(voxel_in,model.coupling)
+        self.voxel_coarse = get_coarseMesh_voxel(self.voxel,model.coupling)
+        self.voxel_in_coarse = get_coarseMesh_voxel(self.voxel_in,model.coupling)
         self.species = species
         self.diffusivity = diffusivity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_out_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
+        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
         super().__init__(model)
 
     def update_rate(self):
-        a1 = self.model.system_state[self.species][self.voxel_out]
-        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_out_coarse]
+        a1 = self.model.system_state[self.species][self.voxel]
+        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_coarse]
         self.rate = self.diffusivity*rho(a2,a1)
         return None
 
