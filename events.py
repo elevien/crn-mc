@@ -20,7 +20,10 @@ class Event:
         self.time_internal = 0.
         self.wait_internal = exponential0(1.)
         self.update_rate()
-        self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
+        if self.rate>0:
+            self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
+        else:
+            self.wait_absolute = exp_max
 
     def fire(self,delta):
         self.update_rate()
@@ -187,7 +190,7 @@ class Reaction_SplitFine(Event):
             if self.reactants[i]>0:
                 a1 = a1*self.model.system_state[i][self.voxel]
                 a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
-        self.rate = min(a1,a2/len(self.model.coupling[self.voxel]))
+        self.rate = rho(a1,a2/len(self.model.coupling[self.voxel]))
         return None
 
 
@@ -219,5 +222,5 @@ class Reaction_SplitCoarse(Event):
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
                 a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
-        self.rate = rho(a1,a2)
+        self.rate = rho(a2,a1)
         return None

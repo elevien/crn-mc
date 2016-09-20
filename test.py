@@ -5,7 +5,7 @@ from pylab import *
 
 
 Nx = 8
-Np = 20
+Np = 30
 L = 1.
 J =2
 D0 = 10.
@@ -31,6 +31,17 @@ r = array([1,1,0])
 p = array([0,0,1])
 model.add_reaction(r,p)
 model_uncoupled.add_reaction(r,p)
+
+r = array([0,0,0])
+p = array([1,0,0])
+model.add_reaction(r,p)
+model_uncoupled.add_reaction(r,p)
+
+r = array([0,0,0])
+p = array([0,1,0])
+model.add_reaction(r,p)
+model_uncoupled.add_reaction(r,p)
+
 print("Running coupled ---------------------------------------------------")
 path,clock = next_reaction(model,10)
 print("Running uncoupled ---------------------------------------------------")
@@ -38,10 +49,12 @@ path_uncoupled,clock_uncoupled = next_reaction(model_uncoupled,10)
 
 
 
-plt.plot(clock,path[:,2,0],'k-')
-plt.plot(clock,path[:,Nspecies+2,0]/J,'r-')
-plt.plot(clock,path_uncoupled[:,2,0],'g--')
-print(path)
+plt.plot(clock,path[:,2,J],'k-')
+plt.plot(clock,path[:,Nspecies+2,J]/J,'r-')
+plt.plot(clock,path_uncoupled[:,2,J],'g--')
+
+#plt.plot(range(Nx),path[-1,2],'k-')
+#plt.plot(range(Nx),path[-1,Nspecies+2],'k+')
 ax = plt.gca()
-ax.set_ylim([0,2*Np])
+#ax.set_ylim([0,4*Np])
 plt.show()
