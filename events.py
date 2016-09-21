@@ -193,7 +193,7 @@ class Reaction_SplitFine(Event):
             if self.reactants[i]>0:
                 a1 = a1*pow(self.model.system_state[i][self.voxel],self.reactants[i])
                 a2 = a2*pow(self.model.system_state[self.model.Nspecies+i][self.voxel_coarse],self.reactants[i])
-        self.rate = rho(a1,a2/len(self.model.coupling[self.voxel]))
+        self.rate = rho(a1,a2/np.count_nonzero(self.model.coupling[self.voxel]))
         return None
 
 
@@ -212,7 +212,7 @@ class Reaction_SplitCoarse(Event):
     def update_rate(self):
         # works for order =1,2
 
-        #
+        # add up rates on fine grid
         a1 = 0.
         for j in range(self.model.mesh.Nvoxels):
             aa = self.intensity
@@ -223,6 +223,7 @@ class Reaction_SplitCoarse(Event):
 
         a2 = self.intensity
 
+        # coarse grid rate
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
                 a2 = a2*pow(self.model.system_state[self.model.Nspecies+i][self.voxel_coarse],self.reactants[i])
