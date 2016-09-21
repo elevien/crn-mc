@@ -9,9 +9,9 @@ class Model:
         self.system_state = np.zeros((self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
-    def add_reaction(self,reactants,products):
+    def add_reaction(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
-            reaction = Reaction(self,i,reactants,products)
+            reaction = Reaction(self,i,reactants,products,intensity)
             self.events.append(reaction)
         return None
 
@@ -39,14 +39,14 @@ class SplitCoupled(Model):
         self.system_state = np.zeros((2*self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
-    def add_reaction(self,reactants,products):
+    def add_reaction(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
-            reaction = Reaction_SplitCommon(self,i,reactants,products)
+            reaction = Reaction_SplitCommon(self,i,reactants,products,intensity)
             self.events.append(reaction)
-            reaction = Reaction_SplitFine(self,i,reactants,products)
+            reaction = Reaction_SplitFine(self,i,reactants,products,intensity)
             self.events.append(reaction)
             if i == get_coarseMesh_voxel(i,self.coupling): # only do this once coarse mesh voxel
-                reaction = Reaction_SplitCoarse(self,i,reactants,products)
+                reaction = Reaction_SplitCoarse(self,i,reactants,products,intensity)
                 self.events.append(reaction)
 
 

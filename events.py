@@ -68,10 +68,11 @@ class Diffusion(Event):
 
 
 class Reaction(Event):
-    def __init__(self,model,voxel,reactants,products):
+    def __init__(self,model,voxel,reactants,products,intensity):
         self.voxel = voxel
         self.reactants = reactants
         self.products = products
+        self.intensity = intensity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[:,self.voxel] = products-reactants
         super().__init__(model)
@@ -80,10 +81,10 @@ class Reaction(Event):
 
     def update_rate(self):
         # works for order =1,2
-        a = 1.
+        a = self.intensity
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
-                a = a*self.model.system_state[i,self.voxel]
+                a = a*pow(self.model.system_state[i,self.voxel],self.reactants[i])
         self.rate = a
         return None
 
@@ -151,11 +152,12 @@ class Diffusion_SplitCoarse(Event):
 
 
 class Reaction_SplitCommon(Event):
-    def __init__(self,model,voxel,reactants,products):
+    def __init__(self,model,voxel,reactants,products,intensity):
         self.voxel = voxel
         self.voxel_coarse = get_coarseMesh_voxel(voxel,model.coupling)
         self.reactants = reactants
         self.products = products
+        self.intensity = intensity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
         self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
@@ -163,44 +165,46 @@ class Reaction_SplitCommon(Event):
 
     def update_rate(self):
         # works for order =1,2
-        a1 = 1.
-        a2 = 1.
+        a1 = self.intensity
+        a2 = self.intensity
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
-                a1 = a1*self.model.system_state[i][self.voxel]
-                a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
+                a1 = a1*pow(self.model.system_state[i][self.voxel],self.reactants[i])
+                a2 = a2*pow(self.model.system_state[self.model.Nspecies+i][self.voxel_coarse],self.reactants[i])
         self.rate = min(a1,a2/np.count_nonzero(self.model.coupling[self.voxel]))
         return None
 
 class Reaction_SplitFine(Event):
-    def __init__(self,model,voxel,reactants,products):
+    def __init__(self,model,voxel,reactants,products,intensity):
         self.voxel = voxel
         self.voxel_coarse = get_coarseMesh_voxel(voxel,model.coupling)
         self.reactants = reactants
         self.products = products
+        self.intensity = intensity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
     def update_rate(self):
         # works for order =1,2
-        a1 = 1.
-        a2 = 1.
+        a1 = self.intensity
+        a2 = self.intensity
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
-                a1 = a1*self.model.system_state[i][self.voxel]
-                a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
+                a1 = a1*pow(self.model.system_state[i][self.voxel],self.reactants[i])
+                a2 = a2*pow(self.model.system_state[self.model.Nspecies+i][self.voxel_coarse],self.reactants[i])
         self.rate = rho(a1,a2/len(self.model.coupling[self.voxel]))
         return None
 
 
 
 class Reaction_SplitCoarse(Event):
-    def __init__(self,model,voxel,reactants,products):
+    def __init__(self,model,voxel,reactants,products,intensity):
         self.voxel = voxel
         self.voxel_coarse = get_coarseMesh_voxel(voxel,model.coupling)
         self.reactants = reactants
         self.products = products
+        self.intensity = intensity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
         super().__init__(model)
@@ -211,16 +215,16 @@ class Reaction_SplitCoarse(Event):
         #
         a1 = 0.
         for j in range(self.model.mesh.Nvoxels):
-            aa = 1.
+            aa = self.intensity
             for i in range(self.model.Nspecies):
                 if self.reactants[i]>0 and self.model.coupling[self.voxel,j]>0:
-                    aa = aa*self.model.system_state[i][j]
+                    aa = aa*pow(self.model.system_state[i][j],self.reactants[i])
             a1 = a1 + aa
 
-        a2 = 1.
+        a2 = self.intensity
 
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
-                a2 = a2*self.model.system_state[self.model.Nspecies+i][self.voxel_coarse]
+                a2 = a2*pow(self.model.system_state[self.model.Nspecies+i][self.voxel_coarse],self.reactants[i])
         self.rate = rho(a2,a1)
         return None

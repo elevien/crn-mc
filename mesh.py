@@ -40,17 +40,21 @@ def make_lattice1d_coupled(Nx,L,J):
     return mesh,coupling
 
 # need to implement
-def make_lattice2d(Nx,Ny):
+def make_lattice2d(Nx,Ny,Lx,Ly):
     topology = np.zeros((Nx*Ny,Nx*Ny))
-    d = np.ones(Nx-1)
-    topology = np.diag(d,1)+np.diag(d,-1)
-    geometry = np.zeros((Nx,2))
-    h = Nx/L
-    geometry[:,0] = h*np.ones(Nx)
-    geometry[:,1] = linspace(0,L-h,Nx)
+    d1 = np.ones(Nx-1)
+    d2 = np.ones(Nx*Ny-Ny)
+    for i in range(Ny):
+        topology[i*Ny:(i+1)*Ny,i*Ny:(i+1)*Ny] = np.diag(d1,1)+np.diag(d1,-1)
+    topology = topology + np.diag(d2,Nx)+np.diag(d2,-Nx)
+    geometry = np.zeros((Nx*Ny,2))
+    hx = Nx/Lx
+    hy = Ny/Ly
+    #geometry[:,0] = h*np.ones(Nx)
+    #geometry[:,1] = linspace(0,L-h,Nx)
     mesh  = Mesh(1,topology,geometry)
 
-    return None
+    return mesh
 
 def make_lattice3d(Nx,Ny):
     return None
