@@ -26,7 +26,7 @@ def test2d():
     return None
 
 def test1d_uncoupled():
-    Nx = 20
+    Nx = 10
     Np = 10
     L = 1.
     D0 = pow(10,-3.)
@@ -57,8 +57,8 @@ def test1d_uncoupled():
     model.add_reaction(r,p,6.25*pow(10,-8.))
 
     path,clock = next_reaction(model,10)
-    plt.plot(range(Nx),path[-1,0],'k-')
-    plt.plot(range(Nx),path[-1,1],'k--')
+    plt.step(range(Nx),path[-1,0],'k-')
+    plt.step(range(Nx),path[-1,1],'k--')
 
     #plt.plot(range(Nx),path[-1,2],'k-')
     #plt.plot(range(Nx),path[-1,Nspecies+2],'k+')
@@ -68,8 +68,8 @@ def test1d_uncoupled():
 
 
 def test1d_coupled():
-    Nx = 20
-    Np = 10
+    Nx = 100
+    Np = 100
     L = 1.
     D0 = pow(10,-3.)
     D1 = pow(10,-1.)
@@ -112,15 +112,23 @@ def test1d_coupled():
     path,clock = next_reaction(model,10)
     path_uncoupled,clock_uncoupled = next_reaction(model_uncoupled,10)
 
-    #plt.plot(range(Nx),path[-1,0],'k-')
-    #plt.plot(range(Nx),path[-1,Nspecies]/J,'r+')
-    #plt.plot(range(Nx),path_uncoupled[-1,0],'k--')
+    path_mod = np.zeros(Nx)
+    for i in range(int(Nx/J)):
+        path_mod[i*J] = path[-1,Nspecies,J*i]/J
+        path_mod[i*J+1] = path[-1,Nspecies,J*i]/J
+    plt.plot(range(Nx),path[-1,0],'k-',label='coupled - fine grid')
+    plt.plot(range(Nx),path_mod,'r-',label='coupled - coarse grid')
+    plt.plot(range(Nx),path_uncoupled[-1,0],'k--',label='uncoupled')
 
-    plt.plot(clock,path[:,0,J],'k-')
-    plt.plot(clock,path[:,Nspecies,J],'r-')
-    plt.plot(clock,path_uncoupled[:,0,J],'k--')
+    #plt.plot(clock,path[:,0,J],'k-',label='coupled - fine grid')
+    #plt.plot(clock,path[:,Nspecies,J]/J,'r-',label='coupled - coarse grid')
+    #plt.plot(clock,path_uncoupled[:,0,J],'k--',label='uncoupled')
+    plt.xlabel('Voxel', fontsize=20)
+    plt.ylabel('U', fontsize=20)
+    plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
     ax = plt.gca()
-    #ax.set_ylim([1.,2*Np])
+    #ax.set_ylim([1.,4*Np])
+    savefig('./../output/Schnakenberg1d.pdf', bbox_inches='tight')
     plt.show()
     return None
 

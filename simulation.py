@@ -2,7 +2,7 @@ from model import *
 import numpy as np
 
 def next_reaction(model,T):
-    Nt = 1000;
+    Nt = 400;
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
