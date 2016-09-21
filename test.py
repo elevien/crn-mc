@@ -26,11 +26,11 @@ def test2d():
     return None
 
 def test1d_uncoupled():
-    Nx = 10
-    Np = 10
+    Nx = 100
+    Np = 50
     L = 1.
-    D0 = pow(10,-3.)
-    D1 = pow(10,-1.)
+    D0 = pow(10,-3.)/pow((L/Nx),2)
+    D1 = pow(10,-1.)/pow((L/Nx),2)
     Nspecies = 2 #(U,V)
     mesh = make_lattice1d(Nx,L)
     model = Model(Nspecies,mesh)
@@ -57,9 +57,9 @@ def test1d_uncoupled():
     model.add_reaction(r,p,6.25*pow(10,-8.))
 
     path,clock = next_reaction(model,10)
-    plt.step(range(Nx),path[-1,0],'k-')
-    plt.step(range(Nx),path[-1,1],'k--')
-
+    plt.plot(range(Nx),path[-1,0],'k-')
+    plt.plot(range(Nx),path[-1,1],'r--')
+    print(clock[-1])
     #plt.plot(range(Nx),path[-1,2],'k-')
     #plt.plot(range(Nx),path[-1,Nspecies+2],'k+')
     ax = plt.gca()
@@ -67,12 +67,80 @@ def test1d_uncoupled():
     plt.show()
 
 
+def test_var_coupled():
+    Nx = 20
+    Np = 80
+    L = 1.
+    D0 = pow(10,-3.)/pow((L/Nx),2)
+    D1 = pow(10,-1.)/pow((L/Nx),2)
+    J = 2
+
+    Nspecies = 2
+    mesh,coupling = make_lattice1d_coupled(Nx,L,J)
+    model = SplitCoupled(Nspecies,mesh,coupling)
+    model_uncoupled = Model(Nspecies,mesh)
+
+
+    ic = make_coupledSS(Np*ones((Nspecies,Nx)),coupling)
+    model.system_state = ic
+    model_uncoupled.system_state = Np*ones((Nspecies,Nx))
+    model.add_diffusions(0,D0)
+    model.add_diffusions(1,D1)
+    model_uncoupled.add_diffusions(0,D0)
+    model_uncoupled.add_diffusions(1,D1)
+
+    r = array([0,0])
+    p = array([1,0])
+    model.add_reaction(r,p,4*pow(10,3.))
+    model_uncoupled.add_reaction(r,p,4*pow(10,3.))
+
+    r = array([1,0])
+    p = array([0,0])
+    model.add_reaction(r,p,2.)
+    model_uncoupled.add_reaction(r,p,2.)
+
+    r = array([0,0])
+    p = array([0,1])
+    model.add_reaction(r,p,1.2*pow(10,3.))
+    model_uncoupled.add_reaction(r,p,1.2*pow(10,3.))
+
+    r = array([2,1])
+    p = array([3,0])
+    model.add_reaction(r,p,6.25*pow(10,-8.))
+    model_uncoupled.add_reaction(r,p,6.25*pow(10,-8.))
+
+    Ntests = 10
+    err1 = np.zeros(Ntests)
+    err2 = np.zeros(Ntests)
+    for k in range(Ntests):
+        print("test  # "+str(k))
+        path,clock = next_reaction(model,10)
+        path_uncoupled,clock_uncoupled = next_reaction(model_uncoupled,10)
+        path_mod = np.zeros(Nx)
+        for i in range(int(Nx/J)):
+            path_mod[i*J] = path[-1,Nspecies,J*i]/J
+            path_mod[i*J+1] = path[-1,Nspecies,J*i]/J
+        err1[k] = abs(np.max(path[-1,0] - path_uncoupled[-1,0]))
+        err2[k] = abs(np.max(path[-1,0] - path_mod))
+    plt.plot(range(Ntests),err1,'k-',label='uncoupled')
+    plt.plot(range(Ntests),err2,'r-',label='coupled')
+
+    print("uncoupled var = "+str(var(err1)))
+    print("coupled var = "+str(var(err2)))
+
+    plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
+
+    plt.show()
+
+
+
+
 def test1d_coupled():
-    Nx = 100
+    Nx = 20
     Np = 100
     L = 1.
-    D0 = pow(10,-3.)
-    D1 = pow(10,-1.)
+    D0 = pow(10,-3.)/pow((L/Nx),2)
+    D1 = pow(10,-1.)/pow((L/Nx),2)
     J = 2
 
     Nspecies = 2
@@ -111,6 +179,7 @@ def test1d_coupled():
 
     path,clock = next_reaction(model,10)
     path_uncoupled,clock_uncoupled = next_reaction(model_uncoupled,10)
+    print(clock[-1])
 
     path_mod = np.zeros(Nx)
     for i in range(int(Nx/J)):
@@ -128,8 +197,8 @@ def test1d_coupled():
     plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
     ax = plt.gca()
     #ax.set_ylim([1.,4*Np])
-    savefig('./../output/Schnakenberg1d.pdf', bbox_inches='tight')
+    savefig('./../output/Schnakenberg1d__2.pdf', bbox_inches='tight')
     plt.show()
     return None
 
-test1d_coupled()
+test_var_coupled()

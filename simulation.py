@@ -2,7 +2,7 @@ from model import *
 import numpy as np
 
 def next_reaction(model,T):
-    Nt = 400;
+    Nt = 1000;
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
@@ -24,11 +24,19 @@ def next_reaction(model,T):
         for e in model.events:
             e.no_fire(delta)
         model.events.append(firing_event)
-
-
         if len(model.system_state[model.system_state  <0]) >0:  ## DB
             print("Warning: negative species count from event = " + str(firing_event))  ## DB
             break;
         path[k][:] = model.system_state
         k = k+1
     return path,clock
+
+def tau_leaping(model,T):
+    return None
+
+
+def mc_crude(model,T,f):
+    return None
+
+def mc_splitmc(model,T,f):
+    return None
