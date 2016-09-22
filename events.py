@@ -4,6 +4,7 @@ from mesh import *
 
 global exp_max
 exp_max =  1000000000.
+
 def rho(u,v):
     return u - min(u,v)
 
@@ -17,10 +18,10 @@ def exponential0(rate):
 class Event:
     def __init__(self,model):
         self.model = model
-        self.time_internal = 0.
-        self.wait_internal = exponential0(1.)
+        self.time_internal = 0. # for nrm
+        self.wait_internal = exponential0(1.) # for nrm
         self.update_rate()
-        if self.rate>0:
+        if self.rate>0: # for nrm
             self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
         else:
             self.wait_absolute = exp_max
