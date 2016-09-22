@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, './../')
 from mesh import *
 from model import *
 from simulation import *
@@ -197,7 +199,7 @@ def test1d_coupled():
     plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
     ax = plt.gca()
     #ax.set_ylim([1.,4*Np])
-    savefig('./../output/Schnakenberg1d__2.pdf', bbox_inches='tight')
+    savefig('./../../output/Schnakenberg1d__2.pdf', bbox_inches='tight')
     plt.show()
     return None
 
