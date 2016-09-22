@@ -27,7 +27,7 @@ def test_var_coupled():
     model.add_diffusions(0,D0)
     model.add_diffusions(1,D1)
     model_uncoupled.add_diffusions(0,D0)
-    model_uncoupled.add_diffusions(1,D0)
+    model_uncoupled.add_diffusions(1,D1)
 
     r = array([0,0])
     p = array([1,0])

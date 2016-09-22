@@ -29,7 +29,7 @@ model.add_reaction(r,p,2.)
 
 r = array([0,0])
 p = array([0,1])
-model.add_reaction(r,p,1.1*pow(10,1.))
+model.add_reaction(r,p,6.25*pow(10,1.))
 
 r = array([2,1])
 p = array([3,0])

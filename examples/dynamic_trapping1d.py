@@ -5,37 +5,48 @@ from model import *
 from simulation import *
 from pylab import *
 
-Nx = 100
-Np = 50
+# setup model
+Nx = 50
+Np = 500
 L = 1.
-D0 = pow(10,-3.)/pow((L/Nx),2)
+D0 = 1./pow((L/Nx),2)
 D1 = 0.
+J = 1.
+T = 2.
 Nspecies = 3
 mesh = make_lattice1d(Nx,L)
-model = Model(Nspecies,mesh)
-ic = Np*ones((Nspecies,Nx))
-model.system_state = ic
+m_u = Model(Nspecies,mesh)
 
-model.add_diffusions(0,D0)
-model.add_diffusions(1,D1)
+
+icx = zeros(Nx)
+icx[Nx/2] = Np
+icy1 = zeros(Nx)
+icy2 = ones(Nx)
+
+m_u.system_state[0] = icx
+m_u.system_state[1] = icy1
+m_u.system_state[2] = icy2
+
+
+m_u.add_diffusions(0,D0)
 
 # absorption by trap
 r = array([1,1,0])
 p = array([0,0,1])
-model.add_reaction(r,p,4.)
+m_u.add_reaction(r,p,1.)
 
 # trap opening and closing
-r = array([1,1,0])
+r = array([0,1,0])
 p = array([0,0,1])
-model.add_reaction(r,p,2.)
+m_u.add_reaction(r,p,2.)
 
 r = array([0,0,1])
 p = array([0,1,0])
-model.add_reaction(r,p,5.)
+m_u.add_reaction(r,p,5.)
 
-path,clock = gillespie(model,10)
+path, clock = mc_crude(m_u,m_u.system_state,T,10,10)
 
-plt.imshow(path[:,1], aspect='auto', interpolation="none")
+plt.imshow(path[:,0], aspect='auto', interpolation="none")
 #plt.plot(range(Nx),path[-1,0],'k-')
 #plt.plot(range(Nx),path[-1,1],'r--')
 #plt.plot(range(Nx),path[-1,2],'k-')
