@@ -6,77 +6,10 @@ from simulation import *
 from pylab import *
 
 
-def test2d():
-    Nx = 3
-    Ny = 2
-    Lx = 1.
-    Ly = 1.
-    Np = 10
-    Nspecies = 3
-    D0 = 10.
-    D1 = 3.
-
-    mesh = make_lattice2d(Nx,Nx,Lx,Ly)
-    print(mesh.topology)
-    model= Model(Nspecies,mesh)
-    model.add_diffusions(0,D0)
-    model.add_diffusions(1,D1)
-    model.system_state = Np*ones((Nspecies,Nx*Ny))
-    path,clock = next_reaction(model,10)
-    print(path)
-
-    return None
-
-def test1d_uncoupled():
-    Nx = 100
-    Np = 50
-    L = 1.
-    D0 = pow(10,-3.)/pow((L/Nx),2)
-    D1 = pow(10,-1.)/pow((L/Nx),2)
-    Nspecies = 2 #(U,V)
-    mesh = make_lattice1d(Nx,L)
-    model = Model(Nspecies,mesh)
-    ic = Np*ones((Nspecies,Nx))
-    model.system_state = ic
-
-    model.add_diffusions(0,D0)
-    model.add_diffusions(1,D1)
-
-    r = array([0,0])
-    p = array([1,0])
-    model.add_reaction(r,p,4*pow(10,3.))
-
-    r = array([1,0])
-    p = array([0,0])
-    model.add_reaction(r,p,2.)
-
-    r = array([0,0])
-    p = array([0,1])
-    model.add_reaction(r,p,1.2*pow(10,3.))
-
-    r = array([2,1])
-    p = array([3,0])
-    model.add_reaction(r,p,6.25*pow(10,-8.))
-
-    path,clock = gillespie(model,10)
-    plt.plot(range(Nx),path[-1,0],'k-')
-    plt.plot(range(Nx),path[-1,1],'r--')
-    print(clock[-1])
-    #plt.plot(range(Nx),path[-1,2],'k-')
-    #plt.plot(range(Nx),path[-1,Nspecies+2],'k+')
-    ax = plt.gca()
-    #ax.set_ylim([0,2*Np])
-    #name1 = './../../paperdata/catalyst/Q_coupled_d2.csv'
-    #fname2 = './../../paperdata/catalyst/Q_crude_d2.csv'
-
-    #savetxt(fname1,Q_coupled,delimiter=',')
-    #savetxt(fname2,Q_crude,delimiter=',')
-    plt.show()
-
 
 def test_var_coupled():
-    Nx = 20
-    Np = 80
+    Nx = 10
+    Np = 800
     L = 1.
     D0 = pow(10,-3.)/pow((L/Nx),2)
     D1 = pow(10,-1.)/pow((L/Nx),2)
@@ -84,7 +17,7 @@ def test_var_coupled():
 
     Nspecies = 2
     mesh,coupling = make_lattice1d_coupled(Nx,L,J)
-    model = SplitCoupled(Nspecies,mesh,coupling)
+    model = ModelSplitCoupled(Nspecies,mesh,coupling)
     model_uncoupled = Model(Nspecies,mesh)
 
 
@@ -94,12 +27,12 @@ def test_var_coupled():
     model.add_diffusions(0,D0)
     model.add_diffusions(1,D1)
     model_uncoupled.add_diffusions(0,D0)
-    model_uncoupled.add_diffusions(1,D1)
+    model_uncoupled.add_diffusions(1,D0)
 
     r = array([0,0])
     p = array([1,0])
-    model.add_reaction(r,p,4*pow(10,3.))
-    model_uncoupled.add_reaction(r,p,4*pow(10,3.))
+    model.add_reaction(r,p,4*pow(10,1.))
+    model_uncoupled.add_reaction(r,p,4*pow(10,1.))
 
     r = array([1,0])
     p = array([0,0])
@@ -108,21 +41,23 @@ def test_var_coupled():
 
     r = array([0,0])
     p = array([0,1])
-    model.add_reaction(r,p,1.2*pow(10,3.))
-    model_uncoupled.add_reaction(r,p,1.2*pow(10,3.))
+    model.add_reaction(r,p,1.1*pow(10,1.))
+    model_uncoupled.add_reaction(r,p,1.1*pow(10,1.))
 
     r = array([2,1])
     p = array([3,0])
     model.add_reaction(r,p,6.25*pow(10,-8.))
     model_uncoupled.add_reaction(r,p,6.25*pow(10,-8.))
 
+
+
     Ntests = 10
     err = np.zeros(Ntests)
     err_uncoupled = np.zeros(Ntests)
     for k in range(Ntests):
         print("test  # "+str(k))
-        path,clock = gillespie(model,10)
-        path_uncoupled,clock_uncoupled = gillespie(model_uncoupled,10)
+        path,clock = gillespie(model,2)
+        path_uncoupled,clock_uncoupled = gillespie(model_uncoupled,2)
         path_mod = np.zeros(Nx)
         for i in range(int(Nx/J)):
             path_mod[i*J] = path[-1,Nspecies,J*i]/J
@@ -202,4 +137,4 @@ def test1d_coupled():
     plt.show()
     return None
 
-test1d_coupled()
+test_var_coupled()

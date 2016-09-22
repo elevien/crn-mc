@@ -23,7 +23,7 @@ class Model:
                     self.events.append(diffusion)
         return None
 
-class SplitCoupled(Model):
+class ModelSplitCoupled(Model):
     def __init__(self,Nspecies,mesh,coupling):
         # coupling is a reducible matrix encoding which voxel
         # are grouped to make coarse mesh. See make_lattice1d_coupled(Nx,J)

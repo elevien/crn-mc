@@ -33,9 +33,9 @@ r = array([0,0,1])
 p = array([0,1,0])
 model.add_reaction(r,p,5.)
 
-path,clock = gillespie(model,10)
+path,clock = gillespie(model,2)
 
-plt.imshow(path[:,1], aspect='auto', interpolation="none")
+plt.imshow(path[:,1], aspect='auto')
 #plt.plot(range(Nx),path[-1,0],'k-')
 #plt.plot(range(Nx),path[-1,1],'r--')
 #plt.plot(range(Nx),path[-1,2],'k-')

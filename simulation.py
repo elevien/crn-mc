@@ -1,13 +1,17 @@
 from model import *
 import numpy as np
 
+
+global Nt
+Nt =  5000.
+
+
 def next_reaction(model,T):
-    Nt = 5000;
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
     k = 1
-    while (k<Nt):
+    while (k<Nt) and (clock[k-1]<T):
         firing_event = min(model.events, key=lambda e: e.wait_absolute)
         badrate = firing_event.wait_absolute
         m = model.events.index(firing_event)
@@ -29,15 +33,14 @@ def next_reaction(model,T):
             break;
         path[k][:] = model.system_state
         k = k+1
-    return path,clock
+    return path[0:k-1],clock[0:k-1]
 
 def gillespie(model,T):
-    Nt = 1000;
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
     k = 1
-    while (k<Nt):
+    while (k<Nt) and (clock[k-1]<T):
         # compute aggregate rate
         agg_rate = sum((e.rate for e in model.events))
         delta = exponential0(agg_rate)
@@ -56,7 +59,7 @@ def gillespie(model,T):
         for e in model.events:
             e.update_rate()
         k = k+1
-    return path,clock
+    return path[0:k-1],clock[0:k-1]
 
 
 def binary_search(events,agg_rate,r):
@@ -70,11 +73,4 @@ def hybrid(model,T):
     return None
 
 def tau_leaping(model,T):
-    return None
-
-
-def mc_crude(model,T,f):
-    return None
-
-def mc_splitmc(model,T,f):
     return None
