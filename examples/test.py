@@ -58,7 +58,7 @@ def test1d_uncoupled():
     p = array([3,0])
     model.add_reaction(r,p,6.25*pow(10,-8.))
 
-    path,clock = next_reaction(model,10)
+    path,clock = gillespie(model,10)
     plt.plot(range(Nx),path[-1,0],'k-')
     plt.plot(range(Nx),path[-1,1],'r--')
     print(clock[-1])
@@ -66,6 +66,11 @@ def test1d_uncoupled():
     #plt.plot(range(Nx),path[-1,Nspecies+2],'k+')
     ax = plt.gca()
     #ax.set_ylim([0,2*Np])
+    #name1 = './../../paperdata/catalyst/Q_coupled_d2.csv'
+    #fname2 = './../../paperdata/catalyst/Q_crude_d2.csv'
+
+    #savetxt(fname1,Q_coupled,delimiter=',')
+    #savetxt(fname2,Q_crude,delimiter=',')
     plt.show()
 
 
@@ -112,23 +117,23 @@ def test_var_coupled():
     model_uncoupled.add_reaction(r,p,6.25*pow(10,-8.))
 
     Ntests = 10
-    err1 = np.zeros(Ntests)
-    err2 = np.zeros(Ntests)
+    err = np.zeros(Ntests)
+    err_uncoupled = np.zeros(Ntests)
     for k in range(Ntests):
         print("test  # "+str(k))
-        path,clock = next_reaction(model,10)
-        path_uncoupled,clock_uncoupled = next_reaction(model_uncoupled,10)
+        path,clock = gillespie(model,10)
+        path_uncoupled,clock_uncoupled = gillespie(model_uncoupled,10)
         path_mod = np.zeros(Nx)
         for i in range(int(Nx/J)):
             path_mod[i*J] = path[-1,Nspecies,J*i]/J
             path_mod[i*J+1] = path[-1,Nspecies,J*i]/J
-        err1[k] = abs(np.max(path[-1,0] - path_uncoupled[-1,0]))
-        err2[k] = abs(np.max(path[-1,0] - path_mod))
-    plt.plot(range(Ntests),err1,'k-',label='uncoupled')
-    plt.plot(range(Ntests),err2,'r-',label='coupled')
+        err_uncoupled[k] = abs(np.max(path[-1,0] - path_uncoupled[-1,0]))
+        err[k] = abs(np.max(path[-1,0] - path_mod))
+    plt.plot(range(Ntests),err_uncoupled,'k-',label='uncoupled')
+    plt.plot(range(Ntests),err,'r-',label='coupled')
 
-    print("uncoupled var = "+str(var(err1)))
-    print("coupled var = "+str(var(err2)))
+    print("uncoupled var = "+str(var(err_uncoupled)))
+    print("coupled var = "+str(var(err)))
 
     plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
 
@@ -138,14 +143,14 @@ def test_var_coupled():
 
 
 def test1d_coupled():
-    Nx = 20
-    Np = 100
+    Nx = 90
+    Np = 75
     L = 1.
     D0 = pow(10,-3.)/pow((L/Nx),2)
     D1 = pow(10,-1.)/pow((L/Nx),2)
     J = 2
 
-    Nspecies = 2
+    Nspecies = 3
     mesh,coupling = make_lattice1d_coupled(Nx,L,J)
     model = SplitCoupled(Nspecies,mesh,coupling)
     model_uncoupled = Model(Nspecies,mesh)
@@ -159,28 +164,22 @@ def test1d_coupled():
     model_uncoupled.add_diffusions(0,D0)
     model_uncoupled.add_diffusions(1,D1)
 
-    r = array([0,0])
-    p = array([1,0])
-    model.add_reaction(r,p,4*pow(10,3.))
-    model_uncoupled.add_reaction(r,p,4*pow(10,3.))
+    # absorption by trap
+    r = array([1,1,0])
+    p = array([0,0,1])
+    model.add_reaction(r,p,4.)
 
-    r = array([1,0])
-    p = array([0,0])
+    # trap opening and closing
+    r = array([0,1,0])
+    p = array([0,0,1])
     model.add_reaction(r,p,2.)
-    model_uncoupled.add_reaction(r,p,2.)
 
-    r = array([0,0])
-    p = array([0,1])
-    model.add_reaction(r,p,1.2*pow(10,3.))
-    model_uncoupled.add_reaction(r,p,1.2*pow(10,3.))
+    r = array([0,0,1])
+    p = array([0,1,0])
+    model.add_reaction(r,p,5.)
 
-    r = array([2,1])
-    p = array([3,0])
-    model.add_reaction(r,p,6.25*pow(10,-8.))
-    model_uncoupled.add_reaction(r,p,6.25*pow(10,-8.))
-
-    path,clock = next_reaction(model,10)
-    path_uncoupled,clock_uncoupled = next_reaction(model_uncoupled,10)
+    path,clock = gillespie(model,10)
+    path_uncoupled,clock_uncoupled = gillespie(model_uncoupled,10)
     print(clock[-1])
 
     path_mod = np.zeros(Nx)
@@ -199,8 +198,8 @@ def test1d_coupled():
     plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
     ax = plt.gca()
     #ax.set_ylim([1.,4*Np])
-    savefig('./../../output/Schnakenberg1d__2.pdf', bbox_inches='tight')
+    savefig('./../../output/DynamicTrap.pdf', bbox_inches='tight')
     plt.show()
     return None
 
-test_var_coupled()
+test1d_coupled()
