@@ -48,7 +48,6 @@ def gillespie(model,T):
         # find next reaction
         r =  np.random.rand()
         firing_event = binary_search(model.events,agg_rate,r)
-        #print(firing_event)
         stoichiometric_coeffs = firing_event.stoichiometric_coeffs
         # update system state
         clock[k] = clock[k-1]+delta
