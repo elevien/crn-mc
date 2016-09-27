@@ -8,10 +8,10 @@ from pylab import *
 
 # make models
 Nx = 10
-Np = 1000
+Np = 100
 L = 1.
 J = 2
-T = 10.
+T = 1.
 Nspecies = 2
 mesh,coupling = make_lattice1d_coupled(Nx,L,J)
 initial_condition = (Np/Nx)*ones((Nspecies,Nx))
@@ -37,12 +37,12 @@ for m in range(Ntests):
     model_u.add_reaction(r,p,1.)
     model_c.add_reaction(r,p,1.)
 
-    r = array([0,1])
-    p = array([1,0])
-    model_u.add_reaction(r,p,0.3)
-    model_c.add_reaction(r,p,0.3)
+    r = array([1,1])
+    p = array([2,0])
+    model_u.add_reaction(r,p,0.5)
+    model_c.add_reaction(r,p,0.5)
 
-    Ntests_2 = 10
+    Ntests_2 = 30
 
     print("D "+str(D_range[m])+"-----------------------")
 
@@ -71,5 +71,5 @@ plt.plot(D_range,var_c,'r-',label='coupled')
 plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
 plt.xlabel('D', fontsize=20)
 plt.ylabel('Sample Var', fontsize=20)
-savefig('./../../output/DynamicTrap.pdf', bbox_inches='tight')
+savefig('./../../output/var3.pdf', bbox_inches='tight')
 plt.show()

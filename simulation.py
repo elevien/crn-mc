@@ -3,7 +3,7 @@ import numpy as np
 
 
 global Nt
-Nt =  5000.
+Nt =  500000.
 
 
 def next_reaction(model,T):
@@ -58,6 +58,7 @@ def gillespie(model,T):
         for e in model.events:
             e.update_rate()
         k = k+1
+    print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
 
