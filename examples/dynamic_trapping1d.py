@@ -7,12 +7,12 @@ from pylab import *
 
 # setup model
 Nx = 50
-Np = 500
+Np = 50
 L = 1.
 D0 = 1./pow((L/Nx),2)
 D1 = 0.
 J = 1.
-T = 2.
+T = 0.00001
 Nspecies = 3
 mesh = make_lattice1d(Nx,L)
 m_u = Model(Nspecies,mesh)
@@ -44,9 +44,9 @@ r = array([0,0,1])
 p = array([0,1,0])
 m_u.add_reaction(r,p,5.)
 
-path, clock = mc_crude(m_u,m_u.system_state,T,10,10)
+path = mc_crude(m_u,m_u.system_state,T,1000,4)
 
-plt.imshow(path[:,0], aspect='auto', interpolation="none")
+plt.plot(range(Nx),path[0])
 #plt.plot(range(Nx),path[-1,0],'k-')
 #plt.plot(range(Nx),path[-1,1],'r--')
 #plt.plot(range(Nx),path[-1,2],'k-')

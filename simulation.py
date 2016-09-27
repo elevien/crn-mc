@@ -78,16 +78,17 @@ def mc_crude(model,initial_conditions,T,Nruns,resolution):
 
     clock_quantized = np.linspace(0,T,resolution)
     Nt  = len(clock_quantized)
-    path_quantized = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
+    average_quantized = np.zeros((len(model.system_state),model.mesh.Nvoxels))
 
     for i in range(Nruns):
         print("run "+str(i)+"/"+str(Nruns))
         model.syste_state = initial_conditions
         path,clock = gillespie(model,T)
-        path_quantized = path_quantized + quantize_path(path,clock,clock_quantized)
-    path_quantized = path_quantized/Nruns
+        average_quantized = average_quantized + path[-1]
 
-    return path_quantized,clock_quantized
+    average_quantized = average_quantized/Nruns
+
+    return average_quantized
 
 def mc_splitCoupled(models,initial_conditions,T,runs,resolution):
 
@@ -106,10 +107,11 @@ def mc_splitCoupled(models,initial_conditions,T,runs,resolution):
 
 def quantize_path(path,clock,clock_quantized):
     path_quantized = np.zeros((len(clock_quantized),len(path[0,:,0]),len(path[0,0])))
-    k = 0.
-    for i in range(len(clock)):
-        while clock[i] > clock_quantized[k] and k<len(clock_quantized):
+    path_quantized[0] = path[0]
+    i = 1.
+    for k in range(len(clock_quantized)):
+        while clock[i] < clock_quantized[k] and i+1<len(clock):
             path_quantized[k] = path[i]
-            k = k +1
+            i = i+1
 
     return path_quantized

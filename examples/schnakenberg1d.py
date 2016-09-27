@@ -21,7 +21,7 @@ model.add_diffusions(1,D1)
 
 r = array([0,0])
 p = array([1,0])
-model.add_reaction(r,p,4*pow(10,1.))
+model.add_reaction(r,p,2*pow(10,1.))
 
 r = array([1,0])
 p = array([0,0])
@@ -37,8 +37,8 @@ model.add_reaction(r,p,6.25*pow(10,-8.))
 
 path,clock = gillespie(model,3)
 
-plt.imshow(path[:,0], aspect='auto', interpolation="none")
-#plt.plot(range(Nx),path[-1,0],'k-')
+#plt.imshow(path[:,0], aspect='auto', interpolation="none")
+plt.plot(range(Nx),path[-1,0],'k-')
 #plt.plot(range(Nx),path[-1,1],'r--')
 #plt.plot(range(Nx),path[-1,2],'k-')
 #plt.plot(range(Nx),path[-1,Nspecies+2],'k+')

@@ -35,7 +35,7 @@ for m in range(Ntests):
     r = array([1,0])
     p = array([0,1])
     model_u.add_reaction(r,p,1.)
-    model_c.add_reaction(r,p,0.1)
+    model_c.add_reaction(r,p,1.)
 
     r = array([0,1])
     p = array([1,0])
@@ -65,8 +65,11 @@ for m in range(Ntests):
 print("uncoupled var = "+str(var_u))
 print("coupled var = "+str(var_c))
 
+
 plt.plot(D_range,var_u,'k-',label='uncoupled')
 plt.plot(D_range,var_c,'r-',label='coupled')
 plt.legend(bbox_to_anchor=(0.9, 0.9), borderaxespad=0.)
-
+plt.xlabel('D', fontsize=20)
+plt.ylabel('Sample Var', fontsize=20)
+savefig('./../../output/DynamicTrap.pdf', bbox_inches='tight')
 plt.show()
