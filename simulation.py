@@ -61,7 +61,7 @@ def gillespie(model,T):
     print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
-def gillespie_hyrbid(model,T,h):
+def gillespie_hybrid(model,T,h):
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
