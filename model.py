@@ -23,6 +23,7 @@ class Model:
                     self.events.append(diffusion)
         return None
 
+
 class ModelSplitCoupled(Model):
     def __init__(self,Nspecies,mesh,coupling):
         # coupling is a reducible matrix encoding which voxel

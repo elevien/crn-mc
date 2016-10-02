@@ -61,6 +61,8 @@ def gillespie(model,T):
     print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
+def gillespie_hyrbid(model,T):
+    
 
 def binary_search(events,agg_rate,r):
     s = 0.
