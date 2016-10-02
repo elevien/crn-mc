@@ -1,3 +1,3 @@
-# mlmc-rdme
-A multi-level Monte Carlo scheme for the reaction diffusion master equation.
-Work in progress.
+# crn-mc
+Some tools for performing Monte Carlo simulations of chemical reaction networks
+in my research
