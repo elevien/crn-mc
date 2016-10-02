@@ -61,8 +61,43 @@ def gillespie(model,T):
     print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
-def gillespie_hyrbid(model,T):
-    return None
+def gillespie_hyrbid(model,T,h):
+    path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
+    clock = np.zeros(Nt)
+    path[0,:] = model.system_state
+    k = 1
+    while (k<Nt) and (clock[k-1]<T):
+        # compute aggregate rate
+        agg_rate = sum((e.rate for e in model.events_slow))
+        delta = exponential0(agg_rate)
+        if delta<h:
+            # find next reaction
+            r =  np.random.rand()
+            firing_event = binary_search(model.events_slow,agg_rate,r)
+            stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+            # update system state
+            clock[k] = clock[k-1]+delta
+            model.system_state =  model.system_state + stoichiometric_coeffs
+            path[k][:] = model.system_state
+            for e in model.events_fast:
+                model.system_state = model.system_state+e.rate*e.stoichiometric_coeffs*h
+                path[k][:] = model.system_state
+        else:
+            # integrate
+            clock[k] = clock[k-1]+h
+            for e in model.events_fast:
+                model.system_state = model.system_state+e.rate*e.stoichiometric_coeffs*h
+                path[k][:] = model.system_state
+
+        # update rates
+        for e in model.events_fast:
+            e.update_rate()
+        for e in model.events_slow:
+            e.update_rate()
+        k = k+1
+    print("k = "+str(k))
+    return path[0:k-1],clock[0:k-1]
+
 
 
 def binary_search(events,agg_rate,r):

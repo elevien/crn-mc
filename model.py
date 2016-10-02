@@ -23,6 +23,31 @@ class Model:
                     self.events.append(diffusion)
         return None
 
+class ModelHybrid(Model):
+    # not yet implemented for spatial model
+    def __init__(self,Nspecies,mesh):
+        self.mesh = mesh
+        #self.Nspecies_fast = Nspecies_fast
+        #self.Nspecies_slow = Nspecies_slow
+        self.Nspecies = Nspecies
+
+        self.events_fast = []
+        self.events_slow = []
+
+    def add_reaction_slow(self,reactants,products,intensity):
+        for i in range(self.mesh.Nvoxels):
+            reaction = Reaction(self,i,reactants,products,intensity)
+            self.events_slow.append(reaction)
+        return None
+
+    def add_reaction_fast(self,reactants,products,intensity):
+        for i in range(self.mesh.Nvoxels):
+            reaction = Reaction(self,i,reactants,products,intensity)
+            self.events_fast.append(reaction)
+        return None
+
+
+
 
 class ModelSplitCoupled(Model):
     def __init__(self,Nspecies,mesh,coupling):
