@@ -90,7 +90,61 @@ class Reaction(Event):
         return None
 
 #-----------------------------------------------------------------------------------------
-# split coupling
+# hybrid split coupling
+
+
+class ReactionHybrid_SplitCommon(Event):
+    def __init__(self,model,voxel,reactants,products,intensity):
+        self.voxel = voxel
+        self.reactants = reactants
+        self.products = products
+        self.intensity = intensity
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+        self.stoichiometric_coeffs[:,self.voxel] = products-reactants
+        super().__init__(model)
+    def __str__(self):
+        return "Reaction in voxel "+str(self.voxel)
+
+    def update_rate(self):
+        # works for order =1,2
+
+        return None
+
+class ReactionHybrid_SplitFine(Event):
+    def __init__(self,model,voxel,reactants,products,intensity):
+        self.voxel = voxel
+        self.reactants = reactants
+        self.products = products
+        self.intensity = intensity
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+        self.stoichiometric_coeffs[:,self.voxel] = products-reactants
+        super().__init__(model)
+
+
+    def update_rate(self):
+        # works for order =1,2
+
+        return None
+
+class ReactionHybrid_SplitCoarse(Event):
+    def __init__(self,model,voxel,reactants,products,intensity):
+        self.voxel = voxel
+        self.reactants = reactants
+        self.products = products
+        self.intensity = intensity
+        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+        self.stoichiometric_coeffs[:,self.voxel] = products-reactants
+        super().__init__(model)
+
+    def update_rate(self):
+        # works for order =1,2
+
+        return None
+
+
+
+#-----------------------------------------------------------------------------------------
+# statial split coupling
 
 
 
