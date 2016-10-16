@@ -59,20 +59,20 @@ class ModelHybridSplitCoupled(Model):
 
     def add_reaction_slow(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
-            reaction_common = ReactionHybrid_SplitCommon(self,i,reactants,products,intensity)
+            reaction_common = ReactionHybridSlow_SplitCommon(self,i,reactants,products,intensity)
             self.events_slow.append(reaction_common)
-            reaction_fast = ReactionHybrid_SplitSlow(self,i,reactants,products,intensity)
+            reaction_fast = ReactionHybridSlow_SplitHybrid(self,i,reactants,products,intensity)
             self.events_slow.append(reaction_fast)
-            reaction_slow = ReactionHybrid_SplitFast(self,i,reactants,products,intensity)
+            reaction_slow = ReactionHybridSlow_SplitExact(self,i,reactants,products,intensity)
             self.events_slow.append(reaction_slow)
         return None
 
     def add_reaction_fast(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
-            reaction = Reaction(self,i,reactants,products,intensity)
+            reaction = ReactionHybridFast_Hybrid(self,i,reactants,products,intensity)
             self.events_fast.append(reaction)
-            reaction = Reaction(self,i,reactants,products,intensity)
-            self.events_fast.append(reaction)
+            reaction = ReactionHybridFast_Exact(self,i,reactants,products,intensity)
+            self.events_slow.append(reaction)
         return None
 
 

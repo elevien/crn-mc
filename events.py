@@ -121,7 +121,7 @@ class ReactionHybridFast_Exact(Event):
         self.products = products
         self.intensity = intensity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
+        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
@@ -143,7 +143,7 @@ class ReactionHybridSlow_SplitCommon(Event):
         self.intensity = intensity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
         self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
+        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
@@ -179,14 +179,14 @@ class ReactionHybridSlow_SplitHybrid(Event):
         self.rate = rho(a1,a2)
         return None
 
-class ReactionHybridFast_SplitExact(Event):
+class ReactionHybridSlow_SplitExact(Event):
     def __init__(self,model,voxel,reactants,products,intensity):
         self.voxel = voxel
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
         self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
+        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
     def update_rate(self):

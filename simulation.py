@@ -79,6 +79,7 @@ def gillespie_hybrid(model,T,h):
             clock[k] = clock[k-1]+delta
             model.system_state =  model.system_state + stoichiometric_coeffs
             path[k][:] = model.system_state
+
             for e in model.events_fast:
                 model.system_state = model.system_state+e.rate*e.stoichiometric_coeffs*h
                 path[k][:] = model.system_state
