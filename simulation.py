@@ -58,7 +58,7 @@ def gillespie(model,T):
         for e in model.events:
             e.update_rate()
         k = k+1
-    print("k = "+str(k))
+    #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
 def gillespie_hybrid(model,T,h):
@@ -96,7 +96,7 @@ def gillespie_hybrid(model,T,h):
         for e in model.events_slow:
             e.update_rate()
         k = k+1
-    print("k = "+str(k))
+    #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
 
