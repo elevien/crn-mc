@@ -1,5 +1,7 @@
 from model import *
 import numpy as np
+from scipy.integrate import ode
+import copy
 
 
 global Nt
@@ -61,6 +63,16 @@ def gillespie(model,T):
     #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
+def rre_f(t,y,model):
+    # make copy of model
+    m = copy.copy(model)
+    m.system_state = y
+    rates = np.zeros(len(m.system_state))
+    for e in m.events_fast:
+        rates = rates + e.stoichiometric_coeffs[:,0]*e.rate
+    #print(rates.tolist())
+    return rates.tolist()
+
 def gillespie_hybrid(model,T,h):
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
@@ -85,10 +97,15 @@ def gillespie_hybrid(model,T,h):
                 path[k][:] = model.system_state
         else:
             # integrate
+            rre = ode(rre_f).set_integrator('zvode', method='bdf', with_jacobian=False)
+            rre.set_initial_value(model.system_state,clock[k]).set_f_params(model)
+            rre.integrate(rre.t+h)
             clock[k] = clock[k-1]+h
-            for e in model.events_fast:
-                model.system_state = model.system_state+e.rate*e.stoichiometric_coeffs*h
-                path[k][:] = model.system_state
+            model.system_state = rre.y
+            path[k][:] = model.system_state
+            #for e in model.events_fast:
+            #    model.system_state = model.system_state+e.rate*e.stoichiometric_coeffs*h
+            #    path[k][:] = model.system_state
 
         # update rates
         for e in model.events_fast:
