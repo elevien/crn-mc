@@ -8,7 +8,7 @@ from timer import *
 
 
 Nx = 1
-Np = 100
+Np = 1000
 L = 1.
 T = 100.
 Nspecies = 4 #(U,V)
@@ -58,11 +58,11 @@ m2.add_reaction_slow(r,p,0.8)
     #     s[k] = path[-1,1]-path[-1,Nspecies+1]
     # print(var(s/10.))
 with timer() as t:
-    path1,clock1= gillespie_hybrid(m1,T,1./pow(Np,2))
+    path1,clock1= gillespie_hybrid(m1,T,1./pow(Np,2),0.1,'lsoda')
 print(t.secs)
 
 with timer() as t:
-    path2,clock2= gillespie_hybrid(m2,T,1./pow(Np,2))
+    path2,clock2= gillespie_hybrid(m2,T,1./pow(Np,2),0.1,'lsoda')
 print(t.secs)
 
 

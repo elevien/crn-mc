@@ -72,34 +72,39 @@ def rre_f(t,y,m):
     #print(rates.tolist())
     return rates.tolist()
 
-def gillespie_hybrid(model,T,h):
+def gillespie_hybrid(model,T,h1,h2,method):
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.system_state
     k = 1
+    rre = ode(rre_f).set_integrator(method,atol = h1,rtol = h1)
+    rre.set_f_params(model)
     while (k<Nt) and (clock[k-1]<T):
         # compute aggregate rate
         agg_rate = sum((e.rate for e in model.events_slow))
         delta = exponential0(agg_rate)
-        if delta<h:
+        if delta<h2:
             # find next reaction
             r =  np.random.rand()
             firing_event = binary_search(model.events_slow,agg_rate,r)
             stoichiometric_coeffs = firing_event.stoichiometric_coeffs
-            # update system state
+
+            # fire slow reaction and update system state
             clock[k] = clock[k-1]+delta
             model.system_state =  model.system_state + stoichiometric_coeffs
             path[k][:] = model.system_state
 
-            for e in model.events_fast:
-                model.system_state = model.system_state+e.rate*e.stoichiometric_coeffs*h
-                path[k][:] = model.system_state
+            # integrate
+            rre.set_initial_value(model.system_state,clock[k])
+            rre.integrate(rre.t+delta)
+            model.system_state = rre.y
+            path[k][:] = model.system_state
+
         else:
             # integrate
-            rre = ode(rre_f).set_integrator('dopri5',atol = h,rtol = h)
-            rre.set_initial_value(model.system_state,clock[k]).set_f_params(model)
-            rre.integrate(rre.t+h)
-            clock[k] = clock[k-1]+h
+            rre.set_initial_value(model.system_state,clock[k])
+            rre.integrate(rre.t+h2)
+            clock[k] = clock[k-1]+h2
             model.system_state = rre.y
             path[k][:] = model.system_state
             #for e in model.events_fast:
