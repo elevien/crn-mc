@@ -63,9 +63,8 @@ def gillespie(model,T):
     #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
-def rre_f(t,y,model):
+def rre_f(t,y,m):
     # make copy of model
-    m = copy.copy(model)
     m.system_state = y
     rates = np.zeros(len(m.system_state))
     for e in m.events_fast:
@@ -97,7 +96,7 @@ def gillespie_hybrid(model,T,h):
                 path[k][:] = model.system_state
         else:
             # integrate
-            rre = ode(rre_f).set_integrator('zvode', method='bdf', with_jacobian=False)
+            rre = ode(rre_f).set_integrator('dopri5',atol = h,rtol = h)
             rre.set_initial_value(model.system_state,clock[k]).set_f_params(model)
             rre.integrate(rre.t+h)
             clock[k] = clock[k-1]+h
@@ -116,8 +115,6 @@ def gillespie_hybrid(model,T,h):
     #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
-
-
 def binary_search(events,agg_rate,r):
     s = 0.
     for e in events:
@@ -125,8 +122,7 @@ def binary_search(events,agg_rate,r):
         if r<s/agg_rate:
             return e
 
-def hybrid(model,T):
-    return None
+
 
 def tau_leaping(model,T):
     return None

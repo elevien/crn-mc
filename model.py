@@ -27,9 +27,9 @@ class ModelHybrid(Model):
     # not yet implemented for spatial model
     def __init__(self,Nspecies,mesh):
         self.mesh = mesh
-        #self.Nspecies_fast = Nspecies_fast
-        #self.Nspecies_slow = Nspecies_slow
+
         self.Nspecies = Nspecies
+        self.system_state = np.zeros((self.Nspecies,self.mesh.Nvoxels))
 
         self.events_fast = []
         self.events_slow = []
