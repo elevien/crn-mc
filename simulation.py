@@ -132,7 +132,36 @@ def binary_search(events,agg_rate,r):
 def tau_leaping(model,T):
     return None
 
-def mc_crude(model,initial_conditions,T,Nruns,resolution):
+
+
+def mc_crude(model,T,Np,delta):
+    Q = 0
+    eps = pow(Np,-delta)
+    Nruns = int(pow(eps,-2))
+    for k in range(Nruns):
+        path,clock= gillespie(model,T)
+        Q = Q+path[-1,0]
+    Q = Q/float(Nruns)
+    return Q
+
+def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,h):
+    eps = pow(Np,-delta)
+    Nruns_coupled = int(pow(eps,1/delta-2))
+    Nruns_hybrid = int(pow(eps,-2))
+    Q_coupled = 0
+    Q_hybrid = 0
+    for k in range(Nruns_coupled):
+        path,clock= gillespie_hybrid(model_coupled,T,eps,h,'lsoda')
+        Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.Nspecies])
+    Q_coupled = Q_coupled/float(Nruns_coupled)
+
+    for k in range(Nruns_hybrid):
+        path,clock= gillespie_hybrid(model_hybrid,T,eps,h,'lsoda')
+        Q_hybrid = Q_hybrid+path[-1,0]
+    Q_hybrid = Q_hybrid/float(Nruns_hybrid)
+    return Q_coupled+Q_hybrid
+
+def mc_crudeDiffusions(model,T,eps,delta):
 
     clock_quantized = np.linspace(0,T,resolution)
     Nt  = len(clock_quantized)
@@ -148,7 +177,7 @@ def mc_crude(model,initial_conditions,T,Nruns,resolution):
 
     return average_quantized
 
-def mc_splitCoupled(models,initial_conditions,T,runs,resolution):
+def mc_splitCoupledDiffusions(models,initial_conditions,T,runs,resolution):
 
     level = len(models)
     clock_quantized = np.linspace(0,T,resolution)
