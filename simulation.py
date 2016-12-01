@@ -72,6 +72,50 @@ def rre_f(t,y,m):
     #print(rates.tolist())
     return rates.tolist()
 
+def strang_split(model,T,h0,h,method):
+    clock = np.arange(0,T,h0)
+    path = np.zeros((len(clock),len(model.system_state),model.mesh.Nvoxels))
+    path[0,:] = model.system_state
+    k = 1
+
+    # setup ODE integrator
+    rre = ode(rre_f).set_integrator(method,atol = h1,rtol = h1)
+    rre.set_f_params(model)
+
+    for k in len(clock):
+        tY = clock[k]
+        # gillespie 1/2 step
+        while tY<clock[k-1]+0.5*h0:
+            agg_rate = sum((e.rate for e in model.events_slow))
+            delta = exponential0(agg_rate)
+            # find next reaction
+            r =  np.random.rand()
+            firing_event = binary_search(model.events_slow,agg_rate,r)
+            stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+            # fire slow reaction and update system state
+            tY = tY+delta
+            model.system_state =  model.system_state + stoichiometric_coeffs
+
+        # integrate 1 step
+        rre.set_initial_value(model.system_state,clock[k])
+        rre.integrate(rre.t+h0)
+        model.system_state = rre.y
+
+        # gillespie 1/2 step
+        while tY<clock[k-1]+h0:
+            agg_rate = sum((e.rate for e in model.events_slow))
+            delta = exponential0(agg_rate)
+            # find next reaction
+            r =  np.random.rand()
+            firing_event = binary_search(model.events_slow,agg_rate,r)
+            stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+            # fire slow reaction and update system state
+            tY = tY+delta
+            model.system_state =  model.system_state + stoichiometric_coeffs
+
+        path[k][:] = model.system_state
+    return path,clock
+
 def gillespie_hybrid(model,T,h1,h2,method):
     path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
@@ -107,9 +151,6 @@ def gillespie_hybrid(model,T,h1,h2,method):
             clock[k] = clock[k-1]+h2
             model.system_state = rre.y
             path[k][:] = model.system_state
-            #for e in model.events_fast:
-            #    model.system_state = model.system_state+e.rate*e.stoichiometric_coeffs*h
-            #    path[k][:] = model.system_state
 
         # update rates
         for e in model.events_fast:
@@ -144,7 +185,7 @@ def mc_crude(model,T,Np,delta):
     Q = Q/float(Nruns)
     return Q
 
-def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,h):
+def mc_hyrbidCoupled(model_coupled,Qz,T,Np,delta,h):
     eps = pow(Np,-delta)
     Nruns_coupled = int(pow(eps,1/delta-2))
     Nruns_hybrid = int(pow(eps,-2))
@@ -155,11 +196,11 @@ def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,h):
         Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.Nspecies])
     Q_coupled = Q_coupled/float(Nruns_coupled)
 
-    for k in range(Nruns_hybrid):
-        path,clock= gillespie_hybrid(model_hybrid,T,eps,h,'lsoda')
-        Q_hybrid = Q_hybrid+path[-1,0]
+    # for k in range(Nruns_hybrid):
+    #     path,clock= gillespie_hybrid(model_hybrid,T,eps,h,'dop853')
+    #     Q_hybrid = Q_hybrid+path[-1,0]
     Q_hybrid = Q_hybrid/float(Nruns_hybrid)
-    return Q_coupled+Q_hybrid
+    return Q_coupled+Qz*Np
 
 def mc_crudeDiffusions(model,T,eps,delta):
 
