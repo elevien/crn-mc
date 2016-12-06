@@ -19,7 +19,7 @@ class Model:
         for i in range(self.mesh.Nvoxels):
             for j in range(self.mesh.Nvoxels):
                 if self.mesh.topology[i,j]>0:
-                    diffusion =Diffusion(self,i,j,species,diffusivity)
+                    diffusion = Diffusion(self,i,j,species,diffusivity)
                     self.events.append(diffusion)
         return None
 

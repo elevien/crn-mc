@@ -55,7 +55,7 @@ def model_setup(Np):
 
 h = .5
 delta = 1.1
-Np_range = array([50,60,70,80])
+Np_range = array([5,6,7,8])
 T_coupled = zeros(len(Np_range))
 T_crude = zeros(len(Np_range))
 Q_coupled = zeros(len(Np_range))
@@ -74,14 +74,17 @@ for i in range(len(Np_range)):
     Np = Np_range[i]
     model_setup(Np)
 
-    q = zeros(1000)
-    for j in range(1000):
-        #with timer() as t:
+    #q = zeros(1000)
+    #for j in range(1000):
+    with timer() as t:
         Q_coupled[i] = mc_hyrbidCoupled(m1,1,1,Np,delta,h)
-        #T_coupled[i] = t.secs
-        q[j] = Q_coupled[i]
-    V_coupled[i] = var(q/Np)
+    T_coupled[i] = t.secs
+    #q[j] = Q_coupled[i]
+    #V_coupled[i] = var(q/Np)
 
+
+plt.plot(Np_range,T_coupled,'k-')
+plt.show()
     #with timer() as t:
         #Q_crude[i] = mc_crude(m3,1,Np,delta)
     #T_crude[i] = t.secs
@@ -90,5 +93,5 @@ for i in range(len(Np_range)):
     #savetxt(fname2,Q_crude,delimiter=',')
     #savetxt(fname3,T_coupled,delimiter=',')
     #savetxt(fname4,T_crude,delimiter=',')
-    savetxt(fname5,Np_range,delimiter=',')
-    savetxt(fname6,V_coupled,delimiter=',')
+    #savetxt(fname5,Np_range,delimiter=',')
+    #savetxt(fname6,V_coupled,delimiter=',')

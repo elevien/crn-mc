@@ -72,47 +72,118 @@ def rre_f(t,y,m):
     #print(rates.tolist())
     return rates.tolist()
 
+def chv_f(t,y,m):
+    m.system_state = y[0:len(m.system_state)].reshape(m.Nspecies,m.mesh.Nvoxels)
+    for e in m.events_fast:
+        e.update_rate()
+    agg_rate = sum((e.rate for e in m.events_slow))
+    rhs = np.zeros(len(m.system_state)+1)
+    for e in m.events_fast:
+        rhs[0:len(m.system_state)] = rhs[0:len(m.system_state)]\
+         + e.stoichiometric_coeffs[:,0].reshape(len(m.system_state),)*e.rate
+    rhs[len(m.system_state)] = 1.
+    rhs = rhs/agg_rate
+    return rhs
+
+
+def chv(model,T,h,method):
+    path = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
+    clock = np.zeros(Nt)
+    path[0,:] = model.system_state
+    k = 1
+    tj = ode(chv_f).set_integrator(method,atol = h,rtol = h)
+    tj.set_f_params(model)
+
+    while (k<Nt) and (clock[k-1]<T):
+        k = k+1
+        s1 = exponential0(1)
+        # solve
+        y0 = np.append(model.system_state.reshape(model.Nspecies*model.mesh.Nvoxels,),clock[k-1])
+        tj.set_initial_value(y0,0)
+        tj.integrate(s1)
+        ys1 = tj.y
+
+        model.system_state = ys1[0:len(model.system_state)].reshape(model.Nspecies,model.mesh.Nvoxels)
+        print(model.system_state.shape)
+        t_next = tj.y[len(model.system_state)]
+        r = np.random.rand()
+
+        # update slow species
+        agg_rate = sum((e.rate for e in model.events_slow))
+        firing_event = binary_search(model.events_slow,agg_rate,r)
+        stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+
+        for e in model.events_fast:
+            e.update_rate()
+        for e in model.events_slow:
+            e.update_rate()
+
+        clock[k] = clock[k-1] + t_next
+        path[k][:] = model.system_state
+    return path[0:k-1],clock[0:k-1]
+
+
+
+
+
 def strang_split(model,T,h0,h,method):
     clock = np.arange(0,T,h0)
     path = np.zeros((len(clock),len(model.system_state),model.mesh.Nvoxels))
     path[0,:] = model.system_state
-    k = 1
 
     # setup ODE integrator
-    rre = ode(rre_f).set_integrator(method,atol = h1,rtol = h1)
+    rre = ode(rre_f).set_integrator(method,atol = h,rtol = h)
     rre.set_f_params(model)
 
-    for k in len(clock):
+    for k in range(len(clock)):
         tY = clock[k]
         # gillespie 1/2 step
-        while tY<clock[k-1]+0.5*h0:
+        while tY<clock[k]+h0/2.:
             agg_rate = sum((e.rate for e in model.events_slow))
             delta = exponential0(agg_rate)
-            # find next reaction
-            r =  np.random.rand()
-            firing_event = binary_search(model.events_slow,agg_rate,r)
-            stoichiometric_coeffs = firing_event.stoichiometric_coeffs
-            # fire slow reaction and update system state
-            tY = tY+delta
-            model.system_state =  model.system_state + stoichiometric_coeffs
+            if delta<h0/2.:
+                tY = tY+delta
+                # find next reaction
+                r = np.random.rand()
+                firing_event = binary_search(model.events_slow,agg_rate,r)
+                stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+                # fire slow reaction and update system state
+                model.system_state = model.system_state + stoichiometric_coeffs
+                for e in model.events_fast:
+                    e.update_rate()
+                for e in model.events_slow:
+                    e.update_rate()
 
         # integrate 1 step
-        rre.set_initial_value(model.system_state,clock[k])
-        rre.integrate(rre.t+h0)
+        rre.set_initial_value(model.system_state,0)
+        rre.integrate(h0)
         model.system_state = rre.y
+        for e in model.events_fast:
+            e.update_rate()
+        for e in model.events_slow:
+            e.update_rate()
 
         # gillespie 1/2 step
-        while tY<clock[k-1]+h0:
+        tY = clock[k]+h0/2.
+        while tY<clock[k]+h0:
             agg_rate = sum((e.rate for e in model.events_slow))
             delta = exponential0(agg_rate)
-            # find next reaction
-            r =  np.random.rand()
-            firing_event = binary_search(model.events_slow,agg_rate,r)
-            stoichiometric_coeffs = firing_event.stoichiometric_coeffs
-            # fire slow reaction and update system state
-            tY = tY+delta
-            model.system_state =  model.system_state + stoichiometric_coeffs
 
+            if delta<h0/2.:
+                tY = tY+delta
+                # find next reaction
+                r =  np.random.rand()
+                firing_event = binary_search(model.events_slow,agg_rate,r)
+                stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+                # fire slow reaction and update system state
+
+                model.system_state =  model.system_state + stoichiometric_coeffs
+                for e in model.events_fast:
+                    e.update_rate()
+                for e in model.events_slow:
+                    e.update_rate()
+
+        # store path
         path[k][:] = model.system_state
     return path,clock
 
