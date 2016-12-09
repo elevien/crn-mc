@@ -73,7 +73,7 @@ def rre_f(t,y,m):
     return rates.tolist()
 
 def chv_f(t,y,m,sample_rate):
-    m.system_state = y[0:len(m.system_state)].reshape(m.Nspecies,m.mesh.Nvoxels)
+    m.system_state = y[0:len(m.system_state)].reshape(m.ss_d1,m.mesh.Nvoxels)
     for e in m.events_fast:
         e.update_rate()
     agg_rate = sum((e.rate for e in m.events_slow))+sample_rate
@@ -98,12 +98,12 @@ def chv(model,T,h,method,sample_rate):
         k = k+1
         s1 = exponential0(1)
         # solve
-        y0 = np.append(model.system_state.reshape(model.Nspecies*model.mesh.Nvoxels,),0)
+        y0 = np.append(model.system_state.reshape(model.ss_d1*model.ss_d2,),0)
         tj.set_initial_value(y0,0)
         tj.integrate(s1)
         ys1 = tj.y
 
-        model.system_state = ys1[0:len(model.system_state)].reshape(model.Nspecies,model.mesh.Nvoxels)
+        model.system_state = ys1[0:len(model.system_state)].reshape(model.ss_d1,model.mesh.Nvoxels)
         t_next = tj.y[len(model.system_state)]
 
         for e in model.events_slow:

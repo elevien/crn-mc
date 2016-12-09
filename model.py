@@ -6,6 +6,8 @@ class Model:
     def __init__(self,Nspecies,mesh):
         self.mesh = mesh
         self.Nspecies = Nspecies
+        self.ss_d1 = Nspecies
+        self.ss_d2 = mesh.Nvoxels
         self.system_state = np.zeros((self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
@@ -29,6 +31,8 @@ class ModelHybrid(Model):
         self.mesh = mesh
 
         self.Nspecies = Nspecies
+        self.ss_d1 = Nspecies
+        self.ss_d2 = mesh.Nvoxels
         self.system_state = np.zeros((self.Nspecies,self.mesh.Nvoxels))
 
         self.events_fast = []
@@ -53,6 +57,8 @@ class ModelHybridSplitCoupled(Model):
         #self.Nspecies_fast = Nspecies_fast
         #self.Nspecies_slow = Nspecies_slow
         self.Nspecies = Nspecies
+        self.ss_d1 = 2*Nspecies
+        self.ss_d2 = mesh.Nvoxels
         self.system_state = np.zeros((2*self.Nspecies,self.mesh.Nvoxels))
         self.events_fast = []
         self.events_slow = []
