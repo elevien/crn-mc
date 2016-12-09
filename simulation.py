@@ -254,22 +254,22 @@ def mc_crude(model,T,Np,delta):
     Q = Q/float(Nruns)
     return Q
 
-def mc_hyrbidCoupled(model_coupled,Qz,T,Np,delta,h):
+def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,h,sample_rate):
     eps = pow(Np,-delta)
     Nruns_coupled = int(pow(eps,1/delta-2))
     Nruns_hybrid = int(pow(eps,-2))
     Q_coupled = 0
     Q_hybrid = 0
     for k in range(Nruns_coupled):
-        path,clock= gillespie_hybrid(model_coupled,T,eps,h,'lsoda')
+        path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
         Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.Nspecies])
     Q_coupled = Q_coupled/float(Nruns_coupled)
 
-    # for k in range(Nruns_hybrid):
-    #     path,clock= gillespie_hybrid(model_hybrid,T,eps,h,'dop853')
-    #     Q_hybrid = Q_hybrid+path[-1,0]
+    for k in range(Nruns_hybrid):
+        path,clock = chv(model_hybrid,T,eps,'lsoda',sample_rate)
+        Q_hybrid = Q_hybrid+path[-1,0]
     Q_hybrid = Q_hybrid/float(Nruns_hybrid)
-    return Q_coupled+Qz*Np
+    return Q_coupled+Q_hybrid
 
 def mc_crudeDiffusions(model,T,eps,delta):
 

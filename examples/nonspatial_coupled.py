@@ -9,7 +9,7 @@ from timer import *
 
 Nx = 1
 L = 1.
-T = 1.
+T = 10.
 Nspecies = 3 #(U,V)
 mesh = make_lattice1d(Nx,L)
 m1 = ModelHybridSplitCoupled(Nspecies,mesh)
@@ -77,17 +77,19 @@ for i in range(len(Np_range)):
     #q = zeros(1000)
     #for j in range(1000):
     with timer() as t:
-        Q_coupled[i] = mc_hyrbidCoupled(m1,1,1,Np,delta,h)
+        Q_coupled[i] = mc_hyrbidCoupled(m1,m2,T,Np,delta,h,0.)
     T_coupled[i] = t.secs
+    with timer() as t:
+        Q_crude[i] = mc_crude(m3,T,Np,delta)
+    T_crude[i] = t.secs
     #q[j] = Q_coupled[i]
     #V_coupled[i] = var(q/Np)
 
 
-plt.plot(Np_range,T_coupled,'k-')
+plt.plot(Np_range,T_coupled,'r-')
+plt.plot(Np_range,T_crude,'k-')
 plt.show()
-    #with timer() as t:
-        #Q_crude[i] = mc_crude(m3,1,Np,delta)
-    #T_crude[i] = t.secs
+
 
     #savetxt(fname1,Q_coupled,delimiter=',')
     #savetxt(fname2,Q_crude,delimiter=',')
