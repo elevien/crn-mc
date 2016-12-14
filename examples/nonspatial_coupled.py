@@ -9,7 +9,7 @@ from timer import *
 
 Nx = 1
 L = 1.
-T = 10.
+T = 50.
 Nspecies = 3 #(U,V)
 mesh = make_lattice1d(Nx,L)
 m1 = ModelHybridSplitCoupled(Nspecies,mesh)
@@ -39,11 +39,11 @@ def model_setup(Np):
     m2.add_reaction_fast(r,p,1.)
     m3.add_reaction(r,p,1.)
 
-    r = array([0,1,0])
-    p = array([0,0,1])
-    m1.add_reaction_slow(r,p,1.)
-    m2.add_reaction_slow(r,p,1.)
-    m3.add_reaction(r,p,0.1)
+    r = array([2,1,0])
+    p = array([2,0,1])
+    m1.add_reaction_slow(r,p,1./pow(Np,2))
+    m2.add_reaction_slow(r,p,1./pow(Np,2))
+    m3.add_reaction(r,p,1./pow(Np,2))
 
     r = array([0,0,1])
     p = array([0,1,0])
@@ -53,9 +53,9 @@ def model_setup(Np):
 
 
 
-h = .5
-delta = 1.1
-Np_range = array([5,6,7,8])
+
+delta = 2.
+Np_range = array([2,7,8,10])
 T_coupled = zeros(len(Np_range))
 T_crude = zeros(len(Np_range))
 Q_coupled = zeros(len(Np_range))
@@ -74,20 +74,24 @@ for i in range(len(Np_range)):
     Np = Np_range[i]
     model_setup(Np)
 
-    #q = zeros(1000)
-    #for j in range(1000):
-    with timer() as t:
-        Q_coupled[i] = mc_hyrbidCoupled(m1,m2,T,Np,delta,h,0.)
-    T_coupled[i] = t.secs
-    with timer() as t:
-        Q_crude[i] = mc_crude(m3,T,Np,delta)
-    T_crude[i] = t.secs
+    q = zeros(100)
+    for j in range(100):
+        #path,clock = gillespie_hybrid(m1,T,pow(Np,-delta),0.1,'lsoda')
+        path,clock = chv(m1,T,pow(Np,-delta),'lsoda',0.)
+        q[j] = abs(path[-1,0]-path[-1,m1.Nspecies])
+    V_coupled[i] = var(q/Np)
+    #with timer() as t:
+    #    Q_coupled[i] = mc_hyrbidCoupled(m1,m2,T,Np,delta,0.)
+    #T_coupled[i] = t.secs
+    #with timer() as t:
+    #    Q_crude[i] = mc_crude(m3,T,Np,delta)
+    #T_crude[i] = t.secs
     #q[j] = Q_coupled[i]
     #V_coupled[i] = var(q/Np)
 
 
-plt.plot(Np_range,T_coupled,'r-')
-plt.plot(Np_range,T_crude,'k-')
+plt.plot(Np_range,V_coupled,'r-')
+#plt.plot(Np_range,T_crude,'k-')
 plt.show()
 
 

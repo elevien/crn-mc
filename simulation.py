@@ -65,12 +65,14 @@ def gillespie(model,T):
 
 def rre_f(t,y,m):
     # make copy of model
-    m.system_state = y
+    m.system_state = y.reshape(m.ss_d1,m.mesh.Nvoxels)
+    for e in m.events_fast:
+        e.update_rate()
     rates = np.zeros(len(m.system_state))
     for e in m.events_fast:
-        rates = rates + e.stoichiometric_coeffs[:,0]*e.rate
+        rates = rates + e.stoichiometric_coeffs[:,0].reshape(len(m.system_state),)*e.rate
     #print(rates.tolist())
-    return rates.tolist()
+    return rates
 
 def chv_f(t,y,m,sample_rate):
     m.system_state = y[0:len(m.system_state)].reshape(m.ss_d1,m.mesh.Nvoxels)
@@ -94,7 +96,7 @@ def chv(model,T,h,method,sample_rate):
     tj = ode(chv_f).set_integrator(method,atol = h,rtol = h)
     tj.set_f_params(model,sample_rate)
 
-    while (k<Nt) and (clock[k-1]<T):
+    while (k+1<Nt) and (clock[k]<T):
         k = k+1
         s1 = exponential0(1)
         # solve
@@ -121,7 +123,17 @@ def chv(model,T,h,method,sample_rate):
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.system_state
 
-    return path[0:k-1],clock[0:k-1]
+    # now find the value of the continous part at exactly T
+    rre = ode(rre_f).set_integrator(method,atol = h,rtol = h)
+    rre.set_f_params(model)
+    rre.set_initial_value(path[k-1][:].reshape(model.ss_d1*model.ss_d2,),0)
+    s1 = T-clock[k-1]
+    rre.integrate(s1)
+    model.system_state = rre.y.reshape(model.ss_d1,model.mesh.Nvoxels)
+    clock[k] = T
+    path[k][:] = model.system_state
+
+    return path[0:k+1],clock[0:k+1]
 
 
 def strang_split(model,T,h0,h,method):
@@ -254,8 +266,9 @@ def mc_crude(model,T,Np,delta):
     Q = Q/float(Nruns)
     return Q
 
-def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,h,sample_rate):
+def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate):
     eps = pow(Np,-delta)
+    h = eps
     Nruns_coupled = int(pow(eps,1/delta-2))
     Nruns_hybrid = int(pow(eps,-2))
     Q_coupled = 0
@@ -265,11 +278,11 @@ def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,h,sample_rate):
         Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.Nspecies])
     Q_coupled = Q_coupled/float(Nruns_coupled)
 
-    for k in range(Nruns_hybrid):
-        path,clock = chv(model_hybrid,T,eps,'lsoda',sample_rate)
-        Q_hybrid = Q_hybrid+path[-1,0]
-    Q_hybrid = Q_hybrid/float(Nruns_hybrid)
-    return Q_coupled+Q_hybrid
+    #for k in range(Nruns_hybrid):
+    #    path,clock = chv(model_hybrid,T,eps,'lsoda',sample_rate)
+    #    Q_hybrid = Q_hybrid+path[-1,0]
+    #Q_hybrid = Q_hybrid/float(Nruns_hybrid)
+    return Q_coupled #+Q_hybrid
 
 def mc_crudeDiffusions(model,T,eps,delta):
 
