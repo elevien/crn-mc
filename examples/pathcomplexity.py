@@ -9,7 +9,7 @@ from timer import *
 Nx = 1
 L = 1.
 T = 10.
-Np = 10.
+Np = 100.
 Nspecies = 3 #(U,V)
 mesh = make_lattice1d(Nx,L)
 m1 = ModelHybridSplitCoupled(Nspecies,mesh)
@@ -61,16 +61,17 @@ m2.system_state[1,0] = 1.
 with timer() as t:
     path3,clock3 = chv(m1,T,pow(Np,-1.),'lsoda',0.)
 tcpu = t.secs
-#print(tcpu)
+print(tcpu)
 
 #with timer() as t:
 ##    path4,clock4 = gillespie(m3,T)
 #tcpu = t.secs
 #print(tcpu)
 
-
+print(path3[-1,0])
+print(path3[-1,3])
 #plt.plot(clock2,path2[:,0],'k-')
-#plt.plot(clock3,path3[:,0],'r-')
-#plt.plot(clock3,path3[:,3],'k-')
+plt.plot(clock3,path3[:,0],'r-')
+plt.plot(clock3,path3[:,3],'k-')
 #plt.plot(clock4,path4[:,0],'b--')
-##plt.show()
+plt.show()

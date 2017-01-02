@@ -2,7 +2,17 @@ import numpy as np
 from mesh import *
 from events import *
 
+
+"""
+
+"""
+
 class Model:
+
+    """
+    Class wrapping all the static information of a biohchemical model
+    """
+
     def __init__(self,Nspecies,mesh):
         self.mesh = mesh
         self.Nspecies = Nspecies
@@ -12,12 +22,25 @@ class Model:
         self.events = []
 
     def add_reaction(self,reactants,products,intensity):
+        """ Add new reaction
+        Input:
+            - reactants [numpy array]
+            - products [numpy array]
+            - intensity [float]
+        """
         for i in range(self.mesh.Nvoxels):
             reaction = Reaction(self,i,reactants,products,intensity)
             self.events.append(reaction)
         return None
 
     def add_diffusions(self,species,diffusivity):
+
+        """ Add diffusive channel
+        Input:
+            - reactants [numpy array]
+            - products [numpy array]
+            - intensity [float]
+        """
         for i in range(self.mesh.Nvoxels):
             for j in range(self.mesh.Nvoxels):
                 if self.mesh.topology[i,j]>0:
@@ -26,7 +49,10 @@ class Model:
         return None
 
 class ModelHybrid(Model):
-    # not yet implemented for spatial model
+
+    """
+    Clas wrapping all the static information of a biohchemical model
+    """
     def __init__(self,Nspecies,mesh):
         self.mesh = mesh
 

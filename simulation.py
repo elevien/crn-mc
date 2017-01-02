@@ -269,7 +269,7 @@ def mc_crude(model,T,Np,delta):
 def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate):
     eps = pow(Np,-delta)
     h = eps
-    Nruns_coupled = int(pow(eps,1/delta-2))
+    Nruns_coupled = int(pow(eps,1/(2*delta)-2))
     Nruns_hybrid = int(pow(eps,-2))
     Q_coupled = 0
     Q_hybrid = 0
