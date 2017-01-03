@@ -1,0 +1,11 @@
+//anaconda/lib/python3.5/site-packages/crn_mc/__init__.py
+//anaconda/lib/python3.5/site-packages/crn_mc/mesh.py
+//anaconda/lib/python3.5/site-packages/crn_mc/model.py
+//anaconda/lib/python3.5/site-packages/crn_mc/simulation/__init__.py
+//anaconda/lib/python3.5/site-packages/crn_mc/simulation/paths.py
+//anaconda/lib/python3.5/site-packages/crn_mc/__pycache__/__init__.cpython-35.pyc
+//anaconda/lib/python3.5/site-packages/crn_mc/__pycache__/mesh.cpython-35.pyc
+//anaconda/lib/python3.5/site-packages/crn_mc/__pycache__/model.cpython-35.pyc
+//anaconda/lib/python3.5/site-packages/crn_mc/simulation/__pycache__/__init__.cpython-35.pyc
+//anaconda/lib/python3.5/site-packages/crn_mc/simulation/__pycache__/paths.cpython-35.pyc
+//anaconda/lib/python3.5/site-packages/crn_mc-1.0-py3.5.egg-info

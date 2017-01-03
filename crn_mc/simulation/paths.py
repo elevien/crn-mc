@@ -1,4 +1,5 @@
-from model import *
+from ..mesh import *
+from ..model import *
 import numpy as np
 from scipy.integrate import ode
 import copy

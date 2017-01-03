@@ -1,6 +1,117 @@
-
 import numpy as np
-from mesh import *
+#from .mesh import *
+
+
+"""
+
+"""
+def hmm():
+    print("fooi")
+    pass
+
+
+class Model:
+
+    """
+    Class wrapping all the static information of a biohchemical model
+    """
+
+    def __init__(self,Nspecies,mesh):
+        self.mesh = mesh
+        self.Nspecies = Nspecies
+        self.ss_d1 = Nspecies
+        self.ss_d2 = mesh.Nvoxels
+        self.system_state = np.zeros((self.Nspecies,self.mesh.Nvoxels))
+        self.events = []
+
+    def add_reaction(self,reactants,products,intensity):
+        """ Add new reaction
+        Input:
+            - reactants [numpy array]
+            - products [numpy array]
+            - intensity [float]
+        """
+        for i in range(self.mesh.Nvoxels):
+            reaction = Reaction(self,i,reactants,products,intensity)
+            self.events.append(reaction)
+        return None
+
+    def add_diffusions(self,species,diffusivity):
+
+        """ Add diffusive channel
+        Input:
+            - reactants [numpy array]
+            - products [numpy array]
+            - intensity [float]
+        """
+        for i in range(self.mesh.Nvoxels):
+            for j in range(self.mesh.Nvoxels):
+                if self.mesh.topology[i,j]>0:
+                    diffusion = Diffusion(self,i,j,species,diffusivity)
+                    self.events.append(diffusion)
+        return None
+
+class ModelHybrid(Model):
+
+    """
+    Clas wrapping all the static information of a biohchemical model
+    """
+    def __init__(self,Nspecies,mesh):
+        self.mesh = mesh
+
+        self.Nspecies = Nspecies
+        self.ss_d1 = Nspecies
+        self.ss_d2 = mesh.Nvoxels
+        self.system_state = np.zeros((self.Nspecies,self.mesh.Nvoxels))
+
+        self.events_fast = []
+        self.events_slow = []
+
+    def add_reaction_slow(self,reactants,products,intensity):
+        for i in range(self.mesh.Nvoxels):
+            reaction = Reaction(self,i,reactants,products,intensity)
+            self.events_slow.append(reaction)
+        return None
+
+    def add_reaction_fast(self,reactants,products,intensity):
+        for i in range(self.mesh.Nvoxels):
+            reaction = Reaction(self,i,reactants,products,intensity)
+            self.events_fast.append(reaction)
+        return None
+
+class ModelHybridSplitCoupled(Model):
+    # not yet implemented for spatial model
+    def __init__(self,Nspecies,mesh):
+        self.mesh = mesh
+        #self.Nspecies_fast = Nspecies_fast
+        #self.Nspecies_slow = Nspecies_slow
+        self.Nspecies = Nspecies
+        self.ss_d1 = 2*Nspecies
+        self.ss_d2 = mesh.Nvoxels
+        self.system_state = np.zeros((2*self.Nspecies,self.mesh.Nvoxels))
+        self.events_fast = []
+        self.events_slow = []
+
+    def add_reaction_slow(self,reactants,products,intensity):
+        for i in range(self.mesh.Nvoxels):
+            reaction_common = ReactionHybridSlow_SplitCommon(self,i,reactants,products,intensity)
+            self.events_slow.append(reaction_common)
+            reaction_fast = ReactionHybridSlow_SplitHybrid(self,i,reactants,products,intensity)
+            self.events_slow.append(reaction_fast)
+            reaction_slow = ReactionHybridSlow_SplitExact(self,i,reactants,products,intensity)
+            self.events_slow.append(reaction_slow)
+        return None
+
+    def add_reaction_fast(self,reactants,products,intensity):
+        for i in range(self.mesh.Nvoxels):
+            reaction = ReactionHybridFast_Hybrid(self,i,reactants,products,intensity)
+            self.events_fast.append(reaction)
+            reaction = ReactionHybridFast_Exact(self,i,reactants,products,intensity)
+            self.events_slow.append(reaction)
+        return None
+
+####################################################################################
+
 
 global exp_max
 exp_max =  1000000000.
@@ -200,68 +311,6 @@ class ReactionHybridSlow_SplitExact(Event):
         return None
 
 
-
-#-----------------------------------------------------------------------------------------
-# statial split coupling
-
-
-
-class Diffusion_SplitCommon(Event):
-    def __init__(self,model,voxel,voxel_in,species,diffusivity):
-        self.voxel = voxel
-        self.voxel_in = voxel_in
-        self.voxel_coarse = get_coarseMesh_voxel(self.voxel,model.coupling)
-        self.voxel_in_coarse = get_coarseMesh_voxel(self.voxel_in,model.coupling)
-        self.species = species
-        self.diffusivity = diffusivity
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[voxel]+np.identity(model.mesh.Nvoxels)[voxel_in]
-
-        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
-        super().__init__(model)
-
-    def update_rate(self):
-        a1 = self.model.system_state[self.species][self.voxel]
-        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_coarse]
-        self.rate = self.diffusivity*min(a1,a2)
-        return None
-
-
-class Diffusion_SplitFine(Event):
-    def __init__(self,model,voxel,voxel_in,species,diffusivity):
-        self.voxel = voxel
-        self.voxel_in = voxel_in
-        self.voxel_coarse = get_coarseMesh_voxel(self.voxel,model.coupling)
-        self.voxel_in_coarse = get_coarseMesh_voxel(self.voxel_in,model.coupling)
-        self.species = species
-        self.diffusivity = diffusivity
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[self.voxel]+np.identity(model.mesh.Nvoxels)[self.voxel_in]
-        super().__init__(model)
-
-    def update_rate(self):
-        a1 = self.model.system_state[self.species][self.voxel]
-        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_coarse]
-        self.rate = self.diffusivity*rho(a1,a2)
-        return None
-
-class Diffusion_SplitCoarse(Event):
-    def __init__(self,model,voxel,voxel_in,species,diffusivity):
-        self.voxel = voxel
-        self.voxel_in = voxel_in
-        self.voxel_coarse = get_coarseMesh_voxel(self.voxel,model.coupling)
-        self.voxel_in_coarse = get_coarseMesh_voxel(self.voxel_in,model.coupling)
-        self.species = species
-        self.diffusivity = diffusivity
-        self.stoichiometric_coeffs = np.zeros((len(model.system_state),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[model.Nspecies+species] = -np.identity(model.mesh.Nvoxels)[self.voxel_coarse]+np.identity(model.mesh.Nvoxels)[self.voxel_in_coarse]
-        super().__init__(model)
-
-    def update_rate(self):
-        a1 = self.model.system_state[self.species][self.voxel]
-        a2 = self.model.system_state[self.model.Nspecies+self.species][self.voxel_coarse]
-        self.rate = self.diffusivity*rho(a2,a1)
-        return None
 
 
 class Reaction_SplitCommon(Event):
