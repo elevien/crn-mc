@@ -5,9 +5,6 @@ import numpy as np
 """
 
 """
-def hmm():
-    print("fooi")
-    pass
 
 
 class Model:

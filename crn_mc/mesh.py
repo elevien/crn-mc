@@ -1,9 +1,5 @@
 import numpy as np
 
-def hmm1():
-    print("ok")
-    pass
-
 
 class Mesh:
     def __init__(self,dimension,topology,geometry):
