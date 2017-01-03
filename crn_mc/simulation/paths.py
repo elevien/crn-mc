@@ -50,7 +50,7 @@ def gillespie(model,T):
 
         # find next reaction
         r =  np.random.rand()
-        firing_event = binary_search(model.events,agg_rate,r)
+        firing_event = find_reaction(model.events,agg_rate,r)
         stoichiometric_coeffs = firing_event.stoichiometric_coeffs
         # update system state
         clock[k] = clock[k-1]+delta
@@ -118,7 +118,7 @@ def chv(model,T,h,method,sample_rate):
         r = np.random.rand()
         agg_rate = sum((e.rate for e in model.events_slow))
         if r>sample_rate/(agg_rate+sample_rate):
-            firing_event = binary_search(model.events_slow,agg_rate,r)
+            firing_event = find_reaction(model.events_slow,agg_rate,r)
             stoichiometric_coeffs = firing_event.stoichiometric_coeffs
             model.system_state = model.system_state + stoichiometric_coeffs
         clock[k] = clock[k-1] + t_next
@@ -156,7 +156,7 @@ def strang_split(model,T,h0,h,method):
                 tY = tY+delta
                 # find next reaction
                 r = np.random.rand()
-                firing_event = binary_search(model.events_slow,agg_rate,r)
+                firing_event = find_reaction(model.events_slow,agg_rate,r)
                 stoichiometric_coeffs = firing_event.stoichiometric_coeffs
                 # fire slow reaction and update system state
                 model.system_state = model.system_state + stoichiometric_coeffs
@@ -184,7 +184,7 @@ def strang_split(model,T,h0,h,method):
                 tY = tY+delta
                 # find next reaction
                 r =  np.random.rand()
-                firing_event = binary_search(model.events_slow,agg_rate,r)
+                firing_event = find_reaction(model.events_slow,agg_rate,r)
                 stoichiometric_coeffs = firing_event.stoichiometric_coeffs
                 # fire slow reaction and update system state
 
@@ -212,7 +212,7 @@ def gillespie_hybrid(model,T,h1,h2,method):
         if delta<h2:
             # find next reaction
             r =  np.random.rand()
-            firing_event = binary_search(model.events_slow,agg_rate,r)
+            firing_event = find_reaction(model.events_slow,agg_rate,r)
             stoichiometric_coeffs = firing_event.stoichiometric_coeffs
 
             # fire slow reaction and update system state
@@ -243,7 +243,7 @@ def gillespie_hybrid(model,T,h1,h2,method):
     #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
-def binary_search(events,agg_rate,r):
+def find_reaction(events,agg_rate,r):
     s = 0.
     for e in events:
         s = s+e.rate

@@ -6,9 +6,9 @@ from crn_mc.simulation.paths import *
 
 
 Nx = 1
-Np = 5000
+Np = 100
 L = 1.
-T = 10
+T = 100
 Nspecies = 3 #(U,V)
 mesh = make_lattice1d(Nx,L)
 print(mesh)
@@ -35,6 +35,7 @@ model.add_reaction(r,p,1.)
 
 r = array([0,1,0])
 p = array([0,0,1])
+# works if this is fast reaction channel
 model_hybrid.add_reaction_slow(r,p,1.)
 model.add_reaction(r,p,1.)
 
