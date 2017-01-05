@@ -164,8 +164,8 @@ class Diffusion(Event):
         self.voxel_in = voxel_in
         self.species = species
         self.diffusivity = diffusivity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[species] = -np.identity(model.mesh.Nvoxels)[self.voxel]+np.identity(model.mesh.Nvoxels)[self.voxel_in]
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[species] = -np.identity(model.mesh.Nvoxels)[self.voxel]+np.identity(model.mesh.Nvoxels)[self.voxel_in]
         super().__init__(model)
 
     def __str__(self):
@@ -182,8 +182,8 @@ class Reaction(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[:,self.voxel] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[:,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
@@ -207,8 +207,8 @@ class ReactionHybridFast_Hybrid(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[0:model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
@@ -228,8 +228,8 @@ class ReactionHybridFast_Exact(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
@@ -249,9 +249,9 @@ class ReactionHybridSlow_SplitCommon(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[0:model.Nspecies,self.voxel] = products-reactants
+        self.direction[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
@@ -272,8 +272,8 @@ class ReactionHybridSlow_SplitHybrid(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[0:model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
 
@@ -293,8 +293,8 @@ class ReactionHybridSlow_SplitExact(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
     def updateRate(self):
@@ -317,9 +317,9 @@ class Reaction_SplitCommon(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[0:model.Nspecies,self.voxel] = products-reactants
+        self.direction[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
         super().__init__(model)
 
     def updateRate(self):
@@ -339,8 +339,8 @@ class Reaction_SplitFine(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[0:model.Nspecies,self.voxel] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[0:model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
     def updateRate(self):
@@ -362,8 +362,8 @@ class Reaction_SplitCoarse(Event):
         self.reactants = reactants
         self.products = products
         self.intensity = intensity
-        self.stoichiometric_coeffs = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-        self.stoichiometric_coeffs[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
+        self.direction = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+        self.direction[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
         super().__init__(model)
 
     def updateRate(self):

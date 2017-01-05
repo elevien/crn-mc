@@ -95,7 +95,7 @@ a10 = 1.
 Nx = 1
 Np = 100.
 L = 1.
-T = 1
+T = 10.
 Nspecies = 6 #(U,V)
 mesh = make_lattice1d(Nx,L)
 model = Model(Nspecies,mesh)
@@ -113,14 +113,14 @@ model.addReaction(r8,p8,z8*pow(Np,a8))
 model.addReaction(r9,p9,z9*pow(Np,a9))
 model.addReaction(r10,p10,z10*pow(Np,a10))
 
-model_coupled.addReactionSlow(r1,p2,z1*pow(Np,a1))
-model_coupled.addReactionSlow(r2,p2,z2*pow(Np,a2))
-model_coupled.addReactionSlow(r3,p3,z3*pow(Np,a3))
-model_coupled.addReactionSlow(r4,p4,z4*pow(Np,a4))
-model_coupled.addReactionSlow(r5,p5,z5*pow(Np,a5))
-model_coupled.addReactionSlow(r6,p6,z6*pow(Np,a6))
-model_coupled.addReactionSlow(r7,p7,z7*pow(Np,a7))
-model_coupled.addReactionSlow(r8,p8,z8*pow(Np,a8))
+model_coupled.addReactionSlowUncoupled(r1,p2,z1*pow(Np,a1))
+model_coupled.addReactionSlowUncoupled(r2,p2,z2*pow(Np,a2))
+model_coupled.addReactionSlowUncoupled(r3,p3,z3*pow(Np,a3))
+model_coupled.addReactionSlowUncoupled(r4,p4,z4*pow(Np,a4))
+model_coupled.addReactionSlowCoupled(r5,p5,z5*pow(Np,a5))
+model_coupled.addReactionSlowCoupled(r6,p6,z6*pow(Np,a6))
+model_coupled.addReactionSlowUncoupled(r7,p7,z7*pow(Np,a7))
+model_coupled.addReactionSlowUncoupled(r8,p8,z8*pow(Np,a8))
 model_coupled.addReactionFast(r9,p9,z9*pow(Np,a9))
 model_coupled.addReactionFast(r10,p10,z10*pow(Np,a10))
 
@@ -150,13 +150,22 @@ model_coupled.systemState[5+6,0] = 10.
 
 # simulate
 path_coupled,clock_coupled =chv(model_coupled,T,pow(Np,-2.),'lsoda',10.)
-path,clock = gillespie(model,T)
+#path,clock = gillespie(model,T)
 
 plt.plot(clock_coupled,path_coupled[:,0]*pow(Np,-g1),'k+')
-plt.plot(clock_coupled,path_coupled[:,1]*pow(Np,-g2),'k+')
+plt.plot(clock_coupled,path_coupled[:,1]*pow(Np,-g2),'r+')
+plt.plot(clock_coupled,path_coupled[:,3]*pow(Np,-g4),'g+')
+plt.plot(clock_coupled,path_coupled[:,4]*pow(Np,-g5),'b+')
 
-plt.plot(clock,path[:,0]*pow(Np,-g1),'r-')
-plt.plot(clock,path[:,1]*pow(Np,-g2),'k-')
+plt.plot(clock_coupled,path_coupled[:,0+6]*pow(Np,-g1),'k-')
+plt.plot(clock_coupled,path_coupled[:,1+6]*pow(Np,-g2),'r-')
+plt.plot(clock_coupled,path_coupled[:,3+6]*pow(Np,-g4),'g-')
+plt.plot(clock_coupled,path_coupled[:,4+6]*pow(Np,-g5),'b-')
+
+
+
+#plt.plot(clock,path[:,0]*pow(Np,-g1),'r-')
+#plt.plot(clock,path[:,1]*pow(Np,-g2),'k-')
 # plt.plot(clock,path[:,0+6]*pow(Np,-g1),'r-')
 # plt.plot(clock,path[:,1+6]*pow(Np,-g2),'k-')
 

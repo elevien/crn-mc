@@ -19,11 +19,11 @@ def next_reaction(model,T):
         badrate = firing_event.wait_absolute
         m = model.events.index(firing_event)
         delta = firing_event.wait_absolute
-        stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+        direction = firing_event.direction
 
         # update system
         clock[k] = clock[k-1]+delta
-        model.systemState =  model.systemState + stoichiometric_coeffs
+        model.systemState =  model.systemState + direction
 
         # fire events
         firing_event.fire(delta)
@@ -51,10 +51,10 @@ def gillespie(model,T):
         # find next reaction
         r =  np.random.rand()
         firing_event = find_reaction(model.events,agg_rate,r)
-        stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+        direction = firing_event.direction
         # update system state
         clock[k] = clock[k-1]+delta
-        model.systemState =  model.systemState + stoichiometric_coeffs
+        model.systemState =  model.systemState + direction
         path[k][:] = model.systemState
 
         # update rates
@@ -71,7 +71,7 @@ def rre_f(t,y,m):
         e.updateRate()
     rates = np.zeros(len(m.systemState))
     for e in m.eventsFast:
-        rates = rates + e.stoichiometric_coeffs[:,0].reshape(len(m.systemState),)*e.rate
+        rates = rates + e.direction[:,0].reshape(len(m.systemState),)*e.rate
     #print(rates.tolist())
     return rates
 
@@ -83,7 +83,7 @@ def chv_f(t,y,m,sample_rate):
     rhs = np.zeros(len(m.systemState)+1)
     for e in m.eventsFast:
         rhs[0:len(m.systemState)] = rhs[0:len(m.systemState)]\
-         + e.stoichiometric_coeffs[:,0].reshape(len(m.systemState),)*e.rate
+         + e.direction[:,0].reshape(len(m.systemState),)*e.rate
     rhs[len(m.systemState)] = 1.
     rhs = rhs/agg_rate
     return rhs
@@ -120,8 +120,8 @@ def chv(model,T,h,method,sample_rate):
         agg_rate = sum((e.rate for e in model.eventsSlow))
         if r>sample_rate/(agg_rate+sample_rate):
             firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-            stoichiometric_coeffs = firing_event.stoichiometric_coeffs
-            model.systemState = model.systemState + stoichiometric_coeffs
+            direction = firing_event.direction
+            model.systemState = model.systemState + direction
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.systemState
 
@@ -158,9 +158,9 @@ def strang_split(model,T,h0,h,method):
                 # find next reaction
                 r = np.random.rand()
                 firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-                stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+                direction = firing_event.direction
                 # fire slow reaction and update system state
-                model.systemState = model.systemState + stoichiometric_coeffs
+                model.systemState = model.systemState + direction
                 for e in model.eventsFast:
                     e.updateRate()
                 for e in model.eventsSlow:
@@ -186,10 +186,10 @@ def strang_split(model,T,h0,h,method):
                 # find next reaction
                 r =  np.random.rand()
                 firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-                stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+                direction = firing_event.direction
                 # fire slow reaction and update system state
 
-                model.systemState =  model.systemState + stoichiometric_coeffs
+                model.systemState =  model.systemState + direction
                 for e in model.eventsFast:
                     e.updateRate()
                 for e in model.eventsSlow:
@@ -214,11 +214,11 @@ def gillespie_hybrid(model,T,h1,h2,method):
             # find next reaction
             r =  np.random.rand()
             firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-            stoichiometric_coeffs = firing_event.stoichiometric_coeffs
+            direction = firing_event.direction
 
             # fire slow reaction and update system state
             clock[k] = clock[k-1]+delta
-            model.systemState =  model.systemState + stoichiometric_coeffs
+            model.systemState =  model.systemState + direction
             path[k][:] = model.systemState
 
             # integrate
