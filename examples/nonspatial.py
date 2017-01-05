@@ -15,35 +15,35 @@ mesh = make_lattice1d(Nx,L)
 print(mesh)
 model = Model(Nspecies,mesh)
 model_hybrid = ModelHybrid(Nspecies,mesh)
-model_hybrid.system_state = np.zeros((Nspecies,1))
-model_hybrid.system_state[0,0] = Np
-model_hybrid.system_state[1,0] = 100.
-model.system_state = np.zeros((Nspecies,1))
-model.system_state[0,0] = Np
-model.system_state[1,0] = 100.
+model_hybrid.systemState = np.zeros((Nspecies,1))
+model_hybrid.systemState[0,0] = Np
+model_hybrid.systemState[1,0] = 100.
+model.systemState = np.zeros((Nspecies,1))
+model.systemState[0,0] = Np
+model.systemState[1,0] = 100.
 
 
 
 r = array([0,1,0])
 p = array([1,1,0])
-model_hybrid.add_reaction_fast(r,p,1.*Np)
-model.add_reaction(r,p,1.*Np)
+model_hybrid.addReactionFast(r,p,1.*Np)
+model.addReaction(r,p,1.*Np)
 
 r = array([1,0,0])
 p = array([0,0,0])
-model_hybrid.add_reaction_fast(r,p,1.)
-model.add_reaction(r,p,1.)
+model_hybrid.addReactionFast(r,p,1.)
+model.addReaction(r,p,1.)
 
 r = array([0,1,0])
 p = array([0,0,1])
 # works if this is fast reaction channel
-model_hybrid.add_reaction_slow(r,p,1.)
-model.add_reaction(r,p,1.)
+model_hybrid.addReactionSlow(r,p,1.)
+model.addReaction(r,p,1.)
 
 r = array([0,0,1])
 p = array([0,1,0])
-model_hybrid.add_reaction_slow(r,p,1.)
-model.add_reaction(r,p,1.)
+model_hybrid.addReactionSlow(r,p,1.)
+model.addReaction(r,p,1.)
 
 
 

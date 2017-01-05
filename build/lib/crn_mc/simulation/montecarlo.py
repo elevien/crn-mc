@@ -39,7 +39,7 @@ def mc_crudeDiffusions(model,T,eps,delta):
 
     clock_quantized = np.linspace(0,T,resolution)
     Nt  = len(clock_quantized)
-    average_quantized = np.zeros((len(model.system_state),model.mesh.Nvoxels))
+    average_quantized = np.zeros((len(model.systemState),model.mesh.Nvoxels))
 
     for i in range(Nruns):
         print("run "+str(i)+"/"+str(Nruns))
@@ -56,7 +56,7 @@ def mc_splitCoupledDiffusions(models,initial_conditions,T,runs,resolution):
     level = len(models)
     clock_quantized = np.linspace(0,T,resolution)
     Nt  = len(clock_quantized)
-    path_quantized = np.zeros((Nt,len(model.system_state),model.mesh.Nvoxels))
+    path_quantized = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
 
     for i in range(levels):
         for j in range(runs[i]):
