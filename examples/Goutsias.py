@@ -100,6 +100,7 @@ Nspecies = 6 #(U,V)
 mesh = make_lattice1d(Nx,L)
 model = Model(Nspecies,mesh)
 model_coupled = ModelHybridSplitCoupled(Nspecies,mesh)
+model_hybrid = ModelHybrid(Nspecies,mesh)
 
 # add reactions
 model.addReaction(r1,p2,z1*pow(Np,a1))
@@ -124,43 +125,74 @@ model_coupled.addReactionSlowUncoupled(r8,p8,z8*pow(Np,a8))
 model_coupled.addReactionFast(r9,p9,z9*pow(Np,a9))
 model_coupled.addReactionFast(r10,p10,z10*pow(Np,a10))
 
-# set intial conditions
-model.systemState[0,0] = 10*pow(Np,g1)
-model.systemState[1,0] = 10*pow(Np,g2)
-model.systemState[2,0] = 10.
-model.systemState[3,0] = 10.
-model.systemState[4,0] = 10.
-model.systemState[5,0] = 10.
+model_hybrid.addReactionSlow(r1,p2,z1*pow(Np,a1))
+model_hybrid.addReactionSlow(r2,p2,z2*pow(Np,a2))
+model_hybrid.addReactionSlow(r3,p3,z3*pow(Np,a3))
+model_hybrid.addReactionSlow(r4,p4,z4*pow(Np,a4))
+model_hybrid.addReactionSlow(r5,p5,z5*pow(Np,a5))
+model_hybrid.addReactionSlow(r6,p6,z6*pow(Np,a6))
+model_hybrid.addReactionSlow(r7,p7,z7*pow(Np,a7))
+model_hybrid.addReactionSlow(r8,p8,z8*pow(Np,a8))
+model_hybrid.addReactionFast(r9,p9,z9*pow(Np,a9))
+model_hybrid.addReactionFast(r10,p10,z10*pow(Np,a10))
+
 
 # set intial conditions
-model_coupled.systemState[0,0] = 10*pow(Np,g1)
-model_coupled.systemState[1,0] = 10*pow(Np,g2)
-model_coupled.systemState[2,0] = 10.
-model_coupled.systemState[3,0] = 10.
-model_coupled.systemState[4,0] = 10.
-model_coupled.systemState[5,0] = 10.
-model_coupled.systemState[0+6,0] = 10*pow(Np,g1)
-model_coupled.systemState[1+6,0] = 10*pow(Np,g2)
-model_coupled.systemState[2+6,0] = 10.
-model_coupled.systemState[3+6,0] = 10.
-model_coupled.systemState[4+6,0] = 10.
-model_coupled.systemState[5+6,0] = 10.
+model_coupled.systemState[0,0] = 5.*pow(Np,g1)
+model_coupled.systemState[1,0] = 5.*pow(Np,g2)
+model_coupled.systemState[2,0] = 50.
+model_coupled.systemState[3,0] = 50.
+model_coupled.systemState[4,0] = 5.
+model_coupled.systemState[5,0] = 5.
+model_coupled.systemState[0+6,0] = model_coupled.systemState[0,0]
+model_coupled.systemState[1+6,0] = model_coupled.systemState[1,0]
+model_coupled.systemState[2+6,0] = model_coupled.systemState[2,0]
+model_coupled.systemState[3+6,0] = model_coupled.systemState[3,0]
+model_coupled.systemState[4+6,0] = model_coupled.systemState[4,0]
+model_coupled.systemState[5+6,0] = model_coupled.systemState[5,0]
+
+# set intial conditions
+model.systemState[0,0] = model_coupled.systemState[0,0]
+model.systemState[1,0] = model_coupled.systemState[1,0]
+model.systemState[2,0] = model_coupled.systemState[2,0]
+model.systemState[3,0] = model_coupled.systemState[3,0]
+model.systemState[4,0] = model_coupled.systemState[4,0]
+model.systemState[5,0] = model_coupled.systemState[5,0]
+
+# set intial conditions
+model_hybrid.systemState[0,0] = model_coupled.systemState[0,0]
+model_hybrid.systemState[1,0] = model_coupled.systemState[1,0]
+model_hybrid.systemState[2,0] = model_coupled.systemState[2,0]
+model_hybrid.systemState[3,0] = model_coupled.systemState[3,0]
+model_hybrid.systemState[4,0] = model_coupled.systemState[4,0]
+model_hybrid.systemState[5,0] = model_coupled.systemState[5,0]
+
+# delta = 1.2
+# sol,Er = mc_crude(model_hybrid,T,Np,delta,lambda: chv(model_hybrid,T,pow(Np,-delta),'lsoda',0.))
+# #sol,Er = mc_crude(model,T,Np,delta,lambda:gillespie(model,T))
+# sol2,Er2 = mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,0.)
+# #print(sol)
+# plt.plot(Er,'k+')
+# plt.plot(Er2,'r-+')
+# plt.show()
+# print(Er)
+# print(Er2)
+
+
 
 
 
 # simulate
 path_coupled,clock_coupled =chv(model_coupled,T,pow(Np,-2.),'lsoda',10.)
-#path,clock = gillespie(model,T)
+path,clock = gillespie(model,T)
 
-plt.plot(clock_coupled,path_coupled[:,0]*pow(Np,-g1),'k+')
-plt.plot(clock_coupled,path_coupled[:,1]*pow(Np,-g2),'r+')
-plt.plot(clock_coupled,path_coupled[:,3]*pow(Np,-g4),'g+')
-plt.plot(clock_coupled,path_coupled[:,4]*pow(Np,-g5),'b+')
-
+plt.plot(clock_coupled,path_coupled[:,0]*pow(Np,-g1),'k--')
 plt.plot(clock_coupled,path_coupled[:,0+6]*pow(Np,-g1),'k-')
-plt.plot(clock_coupled,path_coupled[:,1+6]*pow(Np,-g2),'r-')
-plt.plot(clock_coupled,path_coupled[:,3+6]*pow(Np,-g4),'g-')
-plt.plot(clock_coupled,path_coupled[:,4+6]*pow(Np,-g5),'b-')
+plt.plot(clock,path[:,0]*pow(Np,-g1),'r-')
+
+
+
+#plt.plot(clock_coupled,path_coupled[:,1+6]*pow(Np,-g2),'r-')
 
 
 
@@ -169,5 +201,5 @@ plt.plot(clock_coupled,path_coupled[:,4+6]*pow(Np,-g5),'b-')
 # plt.plot(clock,path[:,0+6]*pow(Np,-g1),'r-')
 # plt.plot(clock,path[:,1+6]*pow(Np,-g2),'k-')
 
-ax = plt.gca()
+#ax = plt.gca()
 plt.show()

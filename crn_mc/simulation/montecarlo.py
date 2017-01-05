@@ -7,33 +7,47 @@ import copy
 
 
 
-def mc_crude(model,T,Np,delta):
-    Q = 0
+def mc_crude(model,T,Np,delta,path_method):
+    Q = []
     eps = pow(Np,-delta)
-    Nruns = int(pow(eps,-2))
-    for k in range(Nruns):
-        path,clock= gillespie(model,T)
-        Q = Q+path[-1,0]
-    Q = Q/float(Nruns)
-    return Q
+    Err = []
+    M0 = 10
+    Mmax = 100000
+    # do a fixed number of prelimnary simulations
+    for i in range(M0):
+        path,clock= path_method()
+        Q = np.append(Q,path[-1,0])
+    i = 0
+    Err.append(np.std(Q))
+    while Err[i-1]>eps and i<Mmax:
+        path,clock= path_method()
+        Q = np.append(Q,path[-1,0])
+        Err.append(np.std(Q))
+        i = i+1
+        #print(Err[i-1])
+    return sum(Q),Err
 
 def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate):
+    Q = []
     eps = pow(Np,-delta)
-    h = eps
-    Nruns_coupled = int(pow(eps,1/(2*delta)-2))
-    Nruns_hybrid = int(pow(eps,-2))
-    Q_coupled = 0
-    Q_hybrid = 0
-    for k in range(Nruns_coupled):
+    #eps = 1.0
+    Err = []
+    M0 = 10
+    Mmax = 100000
+    # do a fixed number of prelimnary simulations
+    for i in range(M0):
         path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
-        Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.Nspecies])
-    Q_coupled = Q_coupled/float(Nruns_coupled)
+        Q = np.append(Q,path[-1,0]-path[-1,model_coupled.Nspecies])
+    i = 0
+    Err.append(np.std(Q))
+    while Err[i-1]>eps and i<Mmax:
+        path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
+        Q = np.append(Q,path[-1,0]-path[-1,model_coupled.Nspecies])
+        Err.append(np.std(Q))
+        i = i+1
+    q2,Err2 = mc_crude(model_hybrid,T,Np,delta,lambda: chv(model_hybrid,T,eps,'lsoda',sample_rate))
 
-    #for k in range(Nruns_hybrid):
-    #    path,clock = chv(model_hybrid,T,eps,'lsoda',sample_rate)
-    #    Q_hybrid = Q_hybrid+path[-1,0]
-    #Q_hybrid = Q_hybrid/float(Nruns_hybrid)
-    return Q_coupled #+Q_hybrid
+    return sum(Q)+q2,Err
 
 def mc_crudeDiffusions(model,T,eps,delta):
 
