@@ -1,10 +1,10 @@
 import os
 
 try:
-    from numpy.distutils.core import setup
+    from setuptools import setup
 except Exception as ex:
     print(ex)
-    print("crn_mc requires NumPy\n")
+    print("crn_mc requires setuptools\n")
     print("See http://numpy.scipy.org/ for more information about NumPy")
     os.sys.exit(-1)
 
