@@ -17,6 +17,11 @@ m.addSpecies("A",1.,array([1.]))
 m.addSpecies("B",1.,array([0.]))
 m.addSpecies("C",0.,array([1.]))
 m.addSpecies("D",0.,array([0.]))
+m.addSpecies("A-coupled",1.,array([1.]))
+m.addSpecies("B-coupled",1.,array([0.]))
+m.addSpecies("C-coupled",0.,array([1.]))
+m.addSpecies("D-coupled",0.,array([0.]))
+
 
 r = array([["A",1.],["C",1.]])
 p = array([["B",1.],["C",1.]])

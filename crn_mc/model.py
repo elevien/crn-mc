@@ -64,3 +64,20 @@ class Model:
         for p in reaction.products:
             p[0].value[reaction.voxel] = p[0].value[reaction.voxel]+p[0].scale*float(p[1])
         return None
+
+    # class ModelHybridSplitCoupled(Model):
+    #
+    #     def __init__(self,mesh,systemSize):
+    #         elf.mesh = mesh
+    #         self.systemSize = systemSize
+    #         self.Nspecies = 0
+    #         self.systemState = []
+    #         #self.systemState = np.zeros((self.Nspecies,self.mesh.Nvoxels))
+    #         self.events = []
+    #
+    #     def addSpecies(self,name,exponent,value):
+    #         scale = pow(self.systemSize,-exponent)
+    #         species = Species(name,scale,self.mesh,value)
+    #         self.systemState.append(species)
+    #         self.Nspecies = self.Nspecies+1
+    #         return None
