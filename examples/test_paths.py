@@ -18,6 +18,5 @@ plt.plot(clock_coupled,path_coupled[:,0],'k--')
 plt.plot(clock_coupled,path_coupled[:,0+6],'k-')
 
 
-
 ax = plt.gca()
 plt.show()

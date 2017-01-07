@@ -9,54 +9,71 @@ global Nt
 Nt =  10e5
 
 
-def gillespie1d(model,T):
-    path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
+def gillespie(model,T,voxel):
+    path = np.zeros((Nt,len(model.systemState)))
+    path[0][:] = model.getStateInVoxel(0)
     clock = np.zeros(Nt)
-    path[0,:] = model.systemState
+
     k = 1
     for e in model.events:
         e.updateRate()
-    while (k<Nt) and (clock[k-1]<T):
+    agg_rate = sum((e.rate for e in model.events))
+    while (k<Nt) and (clock[k-1]<T) and (agg_rate >0):
         # compute aggregate rate
-        agg_rate = sum((e.rate for e in model.events))
+
+
         delta = exponential0(agg_rate)
         # find next reaction
         r =  np.random.rand()
         firing_event = find_reaction(model.events,agg_rate,r)
-        direction = firing_event.direction
         # update system state
         clock[k] = clock[k-1]+delta
-        model.systemState =  model.systemState + direction
-        path[k][:] = model.systemState
+        model.react(firing_event)
+        path[k][:] = model.getStateInVoxel(0)
 
         # update rates
         for e in model.events:
             e.updateRate()
         k = k+1
+        agg_rate = sum((e.rate for e in model.events))
     #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
 
 def chvRHS(t,y,m,sample_rate):
-    m.systemState = y[0:len(m.systemState)].reshape(m.ss_d1,m.mesh.Nvoxels)
-    for e in m.eventsFast:
+    for i in range(m.Nspecies):
+        m.systemState[i].value[0] = y[i]
+    for e in m.events:
         e.updateRate()
-    agg_rate = sum((e.rate for e in m.eventsSlow))
-    rhs = np.zeros(len(m.systemState)+1)
-    for e in m.eventsFast:
-        rhs[0:len(m.systemState)] = rhs[0:len(m.systemState)]\
-         + e.direction[:,0].reshape(len(m.systemState),)*e.rate
+    slow = filter(lambda e: e.speed == "SLOW", m.events)
+    agg_rate = 0.
+    for s in slow:
+        agg_rate = agg_rate + s.rate
+
+    rhs = np.zeros(m.Nspecies+1)
+    for e in m.events:
+        for i in range(m.Nspecies):
+            name = m.systemState[i].name
+            r = list(filter(lambda e: e[0].name == name, e.reactants))
+            p = list(filter(lambda e: e[0].name == name, e.products))
+            direction = 0.
+            if r:
+                direction = direction - float(r[0][1])
+            if p:
+                direction = direction + float(p[0][1])
+            rhs[i] = rhs[i]+ direction
     rhs[len(m.systemState)] = 1.
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
 
 
-def chv1d(model,T,h,method,sample_rate):
+def chv1d(model,T,h,method,sample_rate,voxel):
 
     # there is a bug here. Making sample rate large has problems
 
-    path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
+    path = np.zeros((Nt,len(model.systemState)))
+    path[0][:] = model.getStateInVoxel(0)
     clock = np.zeros(Nt)
-    path[0,:] = model.systemState
+
     k = 0
     tj = ode(chvRHS).set_integrator(method,atol = h,rtol = h)
     tj.set_f_params(model,sample_rate)
@@ -65,44 +82,41 @@ def chv1d(model,T,h,method,sample_rate):
         k = k+1
         s1 = exponential0(1)
         # solve
-        y0 = np.append(model.systemState.reshape(model.ss_d1*model.ss_d2,),0)
+        y0 = np.append(model.getStateInVoxel(0),0)
         tj.set_initial_value(y0,0)
         tj.integrate(s1)
         ys1 = tj.y
 
-        model.systemState = ys1[0:len(model.systemState)].reshape(model.ss_d1,model.mesh.Nvoxels)
-        t_next = tj.y[len(model.systemState)]
+        for i in range(model.Nspecies):
+            model.systemState[i].value[0] = ys1[i]
+        t_next = tj.y[model.Nspecies]
 
-        for e in model.eventsSlow:
-            e.updateRate()
-        for e in model.eventsFast:
+        for e in model.events:
             e.updateRate()
 
         # update slow species
         r = np.random.rand()
-        agg_rate = sum((e.rate for e in model.eventsSlow))
+        slow = filter(lambda e: e.speed == "SLOW", model.events)
+        agg_rate = 0.
+        for s in slow:
+            agg_rate = agg_rate + s.rate
         if r>sample_rate/(agg_rate+sample_rate):
-            firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-            direction = firing_event.direction
-            model.systemState = model.systemState + direction
+            firing_event = find_reaction(model.events,agg_rate,r)
+            model.react(firing_event)
         clock[k] = clock[k-1] + t_next
-        path[k][:] = model.systemState
+        path[k][:] = model.getStateInVoxel(0)
 
-    # now find the value of the continous part at exactly T
-    rre = ode(rre_f).set_integrator(method,atol = h,rtol = h)
-    rre.set_f_params(model)
-    rre.set_initial_value(path[k-1][:].reshape(model.ss_d1*model.ss_d2,),0)
-    s1 = T-clock[k-1]
-    rre.integrate(s1)
-    model.systemState = rre.y.reshape(model.ss_d1,model.mesh.Nvoxels)
-    clock[k] = T
-    path[k][:] = model.systemState
+    # need to find the value of the continous part at exactly T
+
+    #clock[k] = T
+    #path[k][:] = model.getStateInVoxel(0)
 
     return path[0:k+1],clock[0:k+1]
 
 def find_reaction(events,agg_rate,r):
     s = 0.
     for e in events:
-        s = s+e.rate
-        if r<s/agg_rate:
-            return e
+        if e.speed == "SLOW":
+            s = s+e.rate
+            if r<s/agg_rate:
+                return e
