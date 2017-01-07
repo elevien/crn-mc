@@ -75,7 +75,7 @@ def rre_f(t,y,m):
     #print(rates.tolist())
     return rates
 
-def chv_f(t,y,m,sample_rate):
+def chvRHS(t,y,m,sample_rate):
     m.systemState = y[0:len(m.systemState)].reshape(m.ss_d1,m.mesh.Nvoxels)
     for e in m.eventsFast:
         e.updateRate()
@@ -95,7 +95,7 @@ def chv(model,T,h,method,sample_rate):
     clock = np.zeros(Nt)
     path[0,:] = model.systemState
     k = 0
-    tj = ode(chv_f).set_integrator(method,atol = h,rtol = h)
+    tj = ode(chvRHS).set_integrator(method,atol = h,rtol = h)
     tj.set_f_params(model,sample_rate)
 
     while (k+1<Nt) and (clock[k]<T):
