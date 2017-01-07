@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from .mesh import *
 from .events import *
 from .species import *
@@ -15,7 +16,6 @@ class Model:
         self.systemSize = systemSize
         self.Nspecies = 0
         self.systemState = []
-        #self.systemState = np.zeros((self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
     def addSpecies(self,name,exponent,value):
@@ -65,19 +65,92 @@ class Model:
             p[0].value[reaction.voxel] = p[0].value[reaction.voxel]+p[0].scale*float(p[1])
         return None
 
-    # class ModelHybridSplitCoupled(Model):
-    #
-    #     def __init__(self,mesh,systemSize):
-    #         elf.mesh = mesh
-    #         self.systemSize = systemSize
-    #         self.Nspecies = 0
-    #         self.systemState = []
-    #         #self.systemState = np.zeros((self.Nspecies,self.mesh.Nvoxels))
-    #         self.events = []
-    #
-    #     def addSpecies(self,name,exponent,value):
-    #         scale = pow(self.systemSize,-exponent)
-    #         species = Species(name,scale,self.mesh,value)
-    #         self.systemState.append(species)
-    #         self.Nspecies = self.Nspecies+1
-    #         return None
+class ModelHybridSplitCoupled(Model):
+
+
+    def __init__(self,model):
+        self.mesh = copy.deepcopy(model.mesh)
+        self.systemSize = copy.deepcopy(model.systemSize)
+        self.Nspecies = 0
+        self.systemState = []
+        self.events = []
+        #self.systemState = copy.deepcopy(model.systemState)
+        #self.events = copy.deepcopy(model.events)
+        self.setupCoupling(model)
+
+
+    def setupCoupling(self,model):
+            #  """
+            # Set up the coupling between model and it's exact
+            # version. For each fast reaction we make a slow reaction in
+            # the coupled model, while each slow reaction is brown up into
+            # 3 reaction channels via the split coupling method.
+            #
+        # Keyword arguments:
+        # model -- the model to couple
+        #  """
+        #for s in model.systemState:
+        #    self.addSpecies(s.name,s.scale,s.value)
+
+        for s in model.systemState:
+            self.addSpecies(s.name,s.scale,s.value)
+            self.addSpecies(s.name+'-coupled',s.scale,s.value)
+
+        for e in model.events:
+            if e.speed == FAST:
+                # make SLOW version for coupled model
+                e_old = copy.deepcopy(e)
+                e_new = copy.deepcopy(e)
+                for s in e_new.reactants:
+                    newname = s[0].name+'-coupled'
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    s[0] = species
+                for s in e_new.products:
+                    newname = s[0].name+'-coupled'
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    s[0] = species
+                e_new.speed = SLOW
+                self.events.append(e_old)
+                self.events.append(e_new)
+            elif e.speed == SLOW:
+                # make only slow reactions
+                e_slow = copy.deepcopy(e)
+                for s in e_slow.reactants:
+                    newname = s[0].name+'-coupled'
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    s[0] = species
+                for s in e_slow.products:
+                    newname = s[0].name+'-coupled'
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    s[0] = species
+                e_fast = copy.deepcopy(e)
+                for s in e_fast.reactants:
+                    newname = s[0].name
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    s[0] = species
+                for s in e_fast.products:
+                    newname = s[0].name
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    s[0] = species
+                # make common part
+                e_common = copy.deepcopy(e)
+                for s in e_common.reactants:
+                    newname = s[0].name+'-coupled'
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    coeff =  s[1]
+                    e_common.reactants = np.append(e_common.reactants,[[species,coeff]],axis=0)
+                for s in e_common.products:
+                    newname = s[0].name+'-coupled'
+                    species = list(filter(lambda s: s.name == newname, self.systemState))[0]
+                    coeff =  s[1]
+                    e_common.products = np.append(e_common.products,[[species,coeff]],axis=0)
+                print(e_common)
+                e_slow.speed = COUPLED_SLOW
+                e_common.speed = COUPLED_COMMON
+                e_fast.speed = COUPLED_FAST
+                self.events.append(e_slow)
+                self.events.append(e_fast)
+                self.events.append(e_common)
+        return None
+        #
+        #     elif e.speed == SMALL:

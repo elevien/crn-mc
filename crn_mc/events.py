@@ -1,12 +1,16 @@
 import numpy as np
 from .mesh import *
+from .species import *
 
 
-global exp_max
-exp_max =  10e20
 
-def rho(u,v):
-    return u - min(u,v)
+EXP_MAX =  10e20
+FAST = 0
+SLOW = 1
+SMALL = 2
+COUPLED_FAST = 3
+COUPLED_SLOW = 4
+COUPLED_COMMON = 5
 
 def exponential0(rate):
     if (rate <= 0):
@@ -42,24 +46,102 @@ class Reaction(Event):
         self.intensity = intensity
         self.scale = scale
         self.speed = speed
+        self.rate = 0.
         super().__init__()
     def __str__(self):
-        return "Reaction in voxel "+str(self.voxel)
+        s = "In voxel "+str(self.voxel)+" with rate = "+str(self.rate)+": "
+        for r in self.reactants:
+            s = s+str(r[1])+"*"+r[0].name + " +"
+        s = s[:-1]
+        s = s + " -> "
+        for p in self.products:
+            s = s+str(p[1])+"*"+p[0].name + " +"
+        s = s[:-1]
+        return s
 
     def updateRate(self):
+
         # works for order =1,2
-        if self.speed=="SLOW":
-            a = self.intensity
-            for s in self.reactants:
-                    base = s[0].value[self.voxel]
-                    exp = float(s[1])
-                    a = a*pow(base,exp)
-            self.rate = a/self.scale
-        elif self.speed=="FAST":
-            a = self.intensity
-            for s in self.reactants:
-                    base = s[0].value[self.voxel]
-                    exp = float(s[1])
-                    a = a*pow(base,exp)
-            self.rate = a
+        if self.speed == SLOW:
+            self.computeRateSlow()
+        if self.speed == SMALL:
+            self.computeRateSlow()
+        elif self.speed == FAST:
+
+            self.computeRateFast()
+        elif self.speed == COUPLED_SLOW:
+
+            self.computeRateCoupledSlow()
+        elif self.speed == COUPLED_FAST:
+            self.computeRateCoupledFast()
+        elif self.speed == COUPLED_COMMON:
+            self.computeRateCoupledCommon()
+        return None
+
+    def computeRateSlow(self):
+        a = self.intensity
+        for s in self.reactants:
+                base = s[0].value[self.voxel]
+                exp = float(s[1])
+                a = a*pow(base,exp)
+        self.rate = a/self.scale
+        return None
+
+    def computeRateFast(self):
+        a = self.intensity
+        for s in self.reactants:
+            base = s[0].value[self.voxel]
+            exp = float(s[1])
+            a = a*pow(base,exp)
+        self.rate = a
+        return None
+
+
+    def computeRateCoupledSlow(self):
+        a_slow = self.intensity
+        a_fast = self.intensity
+
+        for s in self.reactants[0:len(self.reactants)]:
+            base = s[0].value[self.voxel]
+            exp = float(s[1])
+            a_slow = a_slow*pow(base,exp)
+
+        for s in self.reactants[len(self.reactants):2*len(self.reactants)]:
+            base = s[0].value[self.voxel]
+            exp = float(s[1])
+            a_fast = a_fast*pow(base,exp)
+
+        self.rate = a_slow - min(a_slow,a_fast)
+        return None
+
+    def computeRateCoupledFast(self):
+        a_slow = self.intensity
+        a_fast = self.intensity
+
+        for s in self.reactants[0:len(self.reactants)]:
+            base = s[0].value[self.voxel]
+            exp = float(s[1])
+            a_slow = a_slow*pow(base,exp)
+        for s in self.reactants[len(self.reactants):2*len(self.reactants)]:
+            base = s[0].value[self.voxel]
+            exp = float(s[1])
+            a_fast = a_fast*pow(base,exp)
+
+        self.rate = a_fast - min(a_slow,a_fast)
+        return None
+
+    def computeRateCoupledCommon(self):
+        a_slow = self.intensity
+        a_fast = self.intensity
+
+        for s in self.reactants[0:len(self.reactants)]:
+            base = s[0].value[self.voxel]
+            exp = float(s[1])
+            a_slow = a_slow*pow(base,exp)
+        for s in self.reactants[len(self.reactants):2*len(self.reactants)]:
+            base = s[0].value[self.voxel]
+            exp = float(s[1])
+            a_fast = a_fast*pow(base,exp)
+
+        self.rate = min(a_slow,a_fast)
         return None

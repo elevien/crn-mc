@@ -21,6 +21,7 @@ def gillespie(model,T,voxel):
     while (k<Nt) and (clock[k-1]<T) and (agg_rate >0):
         # compute aggregate rate
         delta = exponential0(agg_rate)
+
         # find next reaction
         r =  np.random.rand()
         firing_event = find_reaction(model.events,agg_rate,r)
@@ -43,13 +44,13 @@ def chvRHS(t,y,m,sample_rate):
         m.systemState[i].value[0] = y[i]
     for e in m.events:
         e.updateRate()
-    slow = filter(lambda e: e.speed == "SLOW", m.events)
+    slow = filter(lambda e: e.speed == SLOW, m.events)
     agg_rate = 0.
     for s in slow:
         agg_rate = agg_rate + s.rate
 
     rhs = np.zeros(m.Nspecies+1)
-    fast = filter(lambda e: e.speed == "FAST", m.events)
+    fast = filter(lambda e: e.speed == FAST, m.events)
     for e in fast:
         for i in range(m.Nspecies):
             name = m.systemState[i].name
@@ -93,18 +94,23 @@ def chv1d(model,T,h,method,sample_rate,voxel):
 
         for e in model.events:
             e.updateRate()
+            print(e)
+            print(e.rate)
 
         # update slow species
         r = np.random.rand()
-        slow = filter(lambda e: e.speed == "SLOW", model.events)
+        slow = filter(lambda e: e.speed == SLOW, model.events)
         agg_rate = 0.
         for s in slow:
             agg_rate = agg_rate + s.rate
         if r>sample_rate/(agg_rate+sample_rate):
             firing_event = find_reaction(model.events,agg_rate,r)
+            #print(firing_event)
             model.react(firing_event)
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.getStateInVoxel(0)
+        #print(path[k][:])
+        #print(clock[k])
 
     # need to find the value of the continous part at exactly T
 
@@ -116,7 +122,7 @@ def chv1d(model,T,h,method,sample_rate,voxel):
 def find_reaction(events,agg_rate,r):
     s = 0.
     for e in events:
-        if e.speed == "SLOW":
+        if e.speed == SLOW:
             s = s+e.rate
             if r<s/agg_rate:
                 return e
