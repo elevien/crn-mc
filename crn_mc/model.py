@@ -6,6 +6,13 @@ import numpy as np
 
 """
 
+class Species:
+    def __init__(self,name,exponent,mesh,value):
+        self.name = name
+        self.exponent = exponent
+        self.value = value
+        self.mesh = mesh
+
 
 class Model:
 
@@ -90,8 +97,6 @@ class ModelHybridSplitCoupled(Model):
         self.eventsSlow = []
         self.eventsUncoupled = []
 
-
-
     def addReactionSlowUncoupled(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
             reaction = ReactionHybridFast_Exact(self,i,reactants,products,intensity)
@@ -120,7 +125,7 @@ class ModelHybridSplitCoupled(Model):
 
 
 global exp_max
-exp_max =  1000000000.
+exp_max =  10e20
 
 def rho(u,v):
     return u - min(u,v)

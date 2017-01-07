@@ -7,7 +7,7 @@ import copy
 
 
 
-def mc_crude(model,T,Np,delta,path_method):
+def mc_crude(model,T,Np,delta,species,path_method):
     Q = []
     eps = pow(Np,-delta)
     Err = []
@@ -16,18 +16,18 @@ def mc_crude(model,T,Np,delta,path_method):
     # do a fixed number of prelimnary simulations
     for i in range(M0):
         path,clock= path_method()
-        Q = np.append(Q,path[-1,0])
+        Q = np.append(Q,path[-1,species])
     i = 0
     Err.append(np.std(Q))
     while Err[i-1]>eps and i<Mmax:
         path,clock= path_method()
-        Q = np.append(Q,path[-1,0])
+        Q = np.append(Q,path[-1,species])
         Err.append(np.std(Q))
         i = i+1
         #print(Err[i-1])
     return sum(Q),Err
 
-def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate):
+def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate,species):
     Q = []
     eps = pow(Np,-delta)
     #eps = 1.0
@@ -37,15 +37,15 @@ def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate):
     # do a fixed number of prelimnary simulations
     for i in range(M0):
         path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
-        Q = np.append(Q,path[-1,0]-path[-1,model_coupled.Nspecies])
+        Q = np.append(Q,path[-1,species]-path[-1,species+model_coupled.Nspecies])
     i = 0
     Err.append(np.std(Q))
     while Err[i-1]>eps and i<Mmax:
         path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
-        Q = np.append(Q,path[-1,0]-path[-1,model_coupled.Nspecies])
+        Q = np.append(Q,path[-1,species]-path[-1,species+model_coupled.Nspecies])
         Err.append(np.std(Q))
         i = i+1
-    q2,Err2 = mc_crude(model_hybrid,T,Np,delta,lambda: chv(model_hybrid,T,eps,'lsoda',sample_rate))
+    q2,Err2 = mc_crude(model_hybrid,T,Np,delta,species,lambda: chv(model_hybrid,T,eps,'lsoda',sample_rate))
 
     return sum(Q)+q2,Err
 
