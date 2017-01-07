@@ -20,13 +20,12 @@ def gillespie(model,T,voxel):
     agg_rate = sum((e.rate for e in model.events))
     while (k<Nt) and (clock[k-1]<T) and (agg_rate >0):
         # compute aggregate rate
-
-
         delta = exponential0(agg_rate)
         # find next reaction
         r =  np.random.rand()
         firing_event = find_reaction(model.events,agg_rate,r)
         # update system state
+
         clock[k] = clock[k-1]+delta
         model.react(firing_event)
         path[k][:] = model.getStateInVoxel(0)
@@ -50,7 +49,8 @@ def chvRHS(t,y,m,sample_rate):
         agg_rate = agg_rate + s.rate
 
     rhs = np.zeros(m.Nspecies+1)
-    for e in m.events:
+    fast = filter(lambda e: e.speed == "FAST", m.events)
+    for e in fast:
         for i in range(m.Nspecies):
             name = m.systemState[i].name
             r = list(filter(lambda e: e[0].name == name, e.reactants))
@@ -60,7 +60,7 @@ def chvRHS(t,y,m,sample_rate):
                 direction = direction - float(r[0][1])
             if p:
                 direction = direction + float(p[0][1])
-            rhs[i] = rhs[i]+ direction
+            rhs[i] = rhs[i]+ direction*e.rate
     rhs[len(m.systemState)] = 1.
     rhs = rhs/(agg_rate+sample_rate)
     return rhs

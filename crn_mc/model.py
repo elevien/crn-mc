@@ -18,9 +18,9 @@ class Model:
         #self.systemState = np.zeros((self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
-    def addSpecies(self,name,exponent,mesh,value):
+    def addSpecies(self,name,exponent,value):
         scale = pow(self.systemSize,-exponent)
-        species = Species(name,scale,mesh,value)
+        species = Species(name,scale,self.mesh,value)
         self.systemState.append(species)
         self.Nspecies = self.Nspecies+1
         return None
@@ -45,8 +45,6 @@ class Model:
             species = list(filter(lambda s: s.name == p[0], self.systemState))[0]
             products.append([species,coeff])
 
-
-
         for i in range(self.mesh.Nvoxels):
             scale = pow(self.systemSize,-scale)
             reaction = Reaction(i,reactants,products,intensity,scale,speed)
@@ -64,5 +62,5 @@ class Model:
         for r in reaction.reactants:
             r[0].value[reaction.voxel] = r[0].value[reaction.voxel]-r[0].scale*float(r[1])
         for p in reaction.products:
-            p[0].value[reaction.voxel] = p[0].value[reaction.voxel]+r[0].scale*float(p[1])
+            p[0].value[reaction.voxel] = p[0].value[reaction.voxel]+p[0].scale*float(p[1])
         return None
