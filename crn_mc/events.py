@@ -64,18 +64,9 @@ class Reaction(Event):
         # works for order =1,2
         if self.speed == SLOW:
             self.computeRateSlow()
-        if self.speed == SMALL:
-            self.computeRateSlow()
         elif self.speed == FAST:
-
             self.computeRateFast()
-        elif self.speed == COUPLED_SLOW:
 
-            self.computeRateCoupledSlow()
-        elif self.speed == COUPLED_FAST:
-            self.computeRateCoupledFast()
-        elif self.speed == COUPLED_COMMON:
-            self.computeRateCoupledCommon()
         return None
 
     def computeRateSlow(self):
@@ -94,54 +85,4 @@ class Reaction(Event):
             exp = float(s[1])
             a = a*pow(base,exp)
         self.rate = a
-        return None
-
-
-    def computeRateCoupledSlow(self):
-        a_slow = self.intensity
-        a_fast = self.intensity
-
-        for s in self.reactants[0:len(self.reactants)]:
-            base = s[0].value[self.voxel]
-            exp = float(s[1])
-            a_slow = a_slow*pow(base,exp)
-
-        for s in self.reactants[len(self.reactants):2*len(self.reactants)]:
-            base = s[0].value[self.voxel]
-            exp = float(s[1])
-            a_fast = a_fast*pow(base,exp)
-
-        self.rate = a_slow - min(a_slow,a_fast)
-        return None
-
-    def computeRateCoupledFast(self):
-        a_slow = self.intensity
-        a_fast = self.intensity
-
-        for s in self.reactants[0:len(self.reactants)]:
-            base = s[0].value[self.voxel]
-            exp = float(s[1])
-            a_slow = a_slow*pow(base,exp)
-        for s in self.reactants[len(self.reactants):2*len(self.reactants)]:
-            base = s[0].value[self.voxel]
-            exp = float(s[1])
-            a_fast = a_fast*pow(base,exp)
-
-        self.rate = a_fast - min(a_slow,a_fast)
-        return None
-
-    def computeRateCoupledCommon(self):
-        a_slow = self.intensity
-        a_fast = self.intensity
-
-        for s in self.reactants[0:len(self.reactants)]:
-            base = s[0].value[self.voxel]
-            exp = float(s[1])
-            a_slow = a_slow*pow(base,exp)
-        for s in self.reactants[len(self.reactants):2*len(self.reactants)]:
-            base = s[0].value[self.voxel]
-            exp = float(s[1])
-            a_fast = a_fast*pow(base,exp)
-
-        self.rate = min(a_slow,a_fast)
         return None
