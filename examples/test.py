@@ -29,33 +29,21 @@ m.addReaction(r,p,2.,1.,FAST)
 
 r = array([["D",1]])
 p = array([["C",1]])
-m.addReaction(r,p,1.,0.,SLOW)
+m.addReaction(r,p,1.,0.,FAST)
 
 r = array([["C",1]])
 p = array([["D",1]])
-m.addReaction(r,p,1.,0.,SLOW)
+m.addReaction(r,p,1.,0.,FAST)
 
-m2 = ModelHybridSplitCoupled(m)
+#m2 = ModelHybridSplitCoupled(m)
 
-    #print(e)
-
-print("model-----------------------------")
-for e in m.events:
-    e.updateRate()
-    print(e)
-
-print("coupling-----------------------------")
-for e in m2.events:
-    e.updateRate()
-    print(e)
-##for s in m2.systemState:
-    #print(s.name)
 
 #path,clock = gillespie(m,T,0)
-path,clock = chv1d(m,T,pow(systemSize,-2.),'lsoda',10.,0)
-print('done')
+#path,clock = pathHybrid(m,T,pow(systemSize,-2.),'lsoda',10.,0)
+path,clock = pathHybridSplitCoupled(m,T,pow(systemSize,-2.),'lsoda',10.,0)
+#print(path)
 
 plt.plot(clock,path[:,0],'k-')
-
-#ax = plt.gca()
+plt.plot(clock,path[:,1],'k--')
+#print(path)
 plt.show()

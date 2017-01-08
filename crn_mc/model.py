@@ -112,6 +112,8 @@ class ModelHybridSplitCoupled(Model):
                 e_new.speed = SLOW
                 self.events.append(e_old)
                 self.events.append(e_new)
+                e_new.updateRate()
+                print(e_new)
             elif e.speed == SLOW:
                 # make only slow reactions
                 e_slow = copy.deepcopy(e)
@@ -144,7 +146,7 @@ class ModelHybridSplitCoupled(Model):
                     species = list(filter(lambda s: s.name == newname, self.systemState))[0]
                     coeff =  s[1]
                     e_common.products = np.append(e_common.products,[[species,coeff]],axis=0)
-                print(e_common)
+
                 e_slow.speed = COUPLED_SLOW
                 e_common.speed = COUPLED_COMMON
                 e_fast.speed = COUPLED_FAST
