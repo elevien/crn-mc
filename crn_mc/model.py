@@ -6,10 +6,7 @@ from .species import *
 
 
 class Model:
-
-    """
-    Class wrapping all the static information of a biohchemical model
-    """
+    """ Contains all the static information about a biochemical model """
 
     def __init__(self,mesh,systemSize):
         self.mesh = mesh
@@ -19,18 +16,26 @@ class Model:
         self.events = []
 
     def addspecies(self,name,exponent,value):
+        """ Adds new species to the model """
+
         scale = pow(self.systemSize,-exponent)
         species = Species(name,scale,self.mesh,value)
         self.systemState.append(species)
         self.Nspecies = self.Nspecies+1
         return None
 
-    def addreaction(self,reactants_vect,products_vect,intensity,scale,speed):
-        """ Add new reaction
+    def addreaction(self,reactants_vect,products_vect,intensity,exponent,speed):
+        """ Add new reaction to the model
+
         Input:
-            - reactants [numpy array]
-            - products [numpy array]
-            - intensity [float]
+            - reactants -- array of tuples (Species name,Integer>0)
+            - products -- array of tuples (Species name,Integer>0)
+            - intensity -- float
+            - exponent -- float
+            - speed -- "FAST","SLOW"...
+
+        Output:
+            None
         """
         reactants = []
         products = []
@@ -46,21 +51,15 @@ class Model:
             products.append([species,coeff])
 
         for i in range(self.mesh.Nvoxels):
-            scale = pow(self.systemSize,-scale)
+            scale = pow(self.systemSize,-exponent)
             reaction = Reaction(i,reactants,products,intensity,scale,speed)
             self.events.append(reaction)
         return None
 
     def getstate(self,voxel):
-        #
+        """ Return state of each species in voxel """
+
         state = np.zeros(len(self.systemState))
         for i in range(len(self.systemState)):
             state[i] = self.systemState[i].value[voxel]
         return state
-
-    def react(self,reaction):
-        for r in reaction.reactants:
-            r[0].value[reaction.voxel] = r[0].value[reaction.voxel]-r[0].scale*float(r[1])
-        for p in reaction.products:
-            p[0].value[reaction.voxel] = p[0].value[reaction.voxel]+p[0].scale*float(p[1])
-        return None

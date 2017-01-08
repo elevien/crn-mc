@@ -2,6 +2,7 @@ import numpy as np
 
 
 class Mesh:
+    """ Contains all the information about the spatial domain """
     def __init__(self,dimension,topology,geometry):
         self.Nvoxels = len(topology)
         self.dimension = dimension

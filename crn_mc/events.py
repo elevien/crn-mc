@@ -12,21 +12,16 @@ COUPLED_FAST = 3
 COUPLED_SLOW = 4
 COUPLED_COMMON = 5
 
-def exponential0(rate):
-    if (rate <= 0):
-        print("Warning: next reaction at t = infinity")
-        return exp_max
-    else:
-        return np.random.exponential(1./rate)
 
 class Event:
+    """ Base class for all dynamics events in the model. """
     def __init__(self):
         self.updaterate()
-
     def updaterate(self):
         return None
 
-class NullReaction:
+class NullEvent:
+    """ Null event represents nothing happening. Useful in path generation. """
     def __init__(self):
         super().__init__()
     def __str__(self):
@@ -36,18 +31,18 @@ class NullReaction:
 
 
 class Reaction(Event):
-    """
+    """ An event representing the reaction of some number of molecules. """
 
-    A single stochastic reaction channel
-
-    """
     def __init__(self,voxel,reactants,products,intensity,scale,speed):
-        """
+        """ Make a reaction.
+
         Input:
-            - voxel [float]
-            - reactants [list of tuples (Species,integer>0)]
-            - product [list of tuples (Species,integer>0)]
+            - voxel -- integer
+            - reactants -- list of tuples of the form (species,integer)
+            - product  -- list of tuples of the form (species,integer)
+
         """
+
         self.voxel = voxel
         self.reactants = reactants
         self.products = products
@@ -56,6 +51,7 @@ class Reaction(Event):
         self.speed = speed
         self.rate = 0.
         super().__init__()
+
     def __str__(self):
         s = "In voxel "+str(self.voxel)+" with rate = "+str(self.rate)+": "
         for r in self.reactants:
@@ -68,8 +64,8 @@ class Reaction(Event):
         return s
 
     def updaterate(self):
+        """ Update the reaction rate based on the values of species involves. """
 
-        # works for order =1,2
         if self.speed == SLOW:
             self.computerate_slow()
         elif self.speed == FAST:
@@ -78,6 +74,8 @@ class Reaction(Event):
         return None
 
     def computerate_slow(self):
+        """ Compute the reaction rate for slow channels. """
+
         a = self.intensity
         for s in self.reactants:
                 base = s[0].value[self.voxel]
@@ -87,10 +85,22 @@ class Reaction(Event):
         return None
 
     def computerate_fast(self):
+        """ Compute fast rates based on leading order term in ma rates. """
+
+        # note that this expression should NOT involve any scales
         a = self.intensity
         for s in self.reactants:
             base = s[0].value[self.voxel]
             exp = float(s[1])
             a = a*pow(base,exp)
         self.rate = a
+        return None
+
+    def react(self):
+        """ update species involved in reaction accoding to stoichiometry. """
+
+        for r in self.reactants:
+            r[0].value[self.voxel] = r[0].value[self.voxel]-r[0].scale*float(r[1])
+        for p in self.products:
+            p[0].value[self.voxel] = p[0].value[self.voxel]+p[0].scale*float(p[1])
         return None

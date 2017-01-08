@@ -10,7 +10,15 @@ global Nt
 Nt =  10e5
 
 
+def tryexponential(rate):
+    """ Trys to compute exponential. """
+    try:
+        return np.random.exponential(1./rate)
+    except ValueError:
+        print("next jump time is at infinity")
+
 def gillespie(model,T,voxel):
+    """ The Gillespie for models with only slow reactions. """
     path = np.zeros((Nt,len(model.systemState)))
     path[0][:] = model.getstate(0)
     clock = np.zeros(Nt)
@@ -21,7 +29,7 @@ def gillespie(model,T,voxel):
     agg_rate = sum((e.rate for e in model.events))
     while (k<Nt) and (clock[k-1]<T) and (agg_rate >0):
         # compute aggregate rate
-        delta = exponential0(agg_rate)
+        delta = tryexponential(agg_rate)
 
         # find next reaction
         r =  np.random.rand()
@@ -84,7 +92,7 @@ def makepath(model,T,h,method,sample_rate,voxel):
 
     while (k+1<Nt) and (clock[k]<T):
         k = k+1
-        s1 = exponential0(1)
+        s1 = tryexponential(1)
         # solve
         y0 = np.append(model.getstate(0),0)
         tj.set_initial_value(y0,0)
@@ -105,8 +113,7 @@ def makepath(model,T,h,method,sample_rate,voxel):
             agg_rate = agg_rate + s.rate
         if r>sample_rate/(agg_rate+sample_rate):
             firing_event = findreaction(model.events,agg_rate,r)
-            print(firing_event)
-            model.react(firing_event)
+            firing_event.react()
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.getstate(0)
     return path[0:k+1],clock[0:k+1]
@@ -169,7 +176,7 @@ def makepath_coupled(model_hybrid,T,h,method,sample_rate,voxel):
 
     while (k+1<Nt) and (clock[k]<T):
         k = k+1
-        s1 = exponential0(1)
+        s1 = tryexponential(1)
         # solve
         y0[0:model_hybrid.Nspecies] = model_hybrid.getstate(0)
         y0[model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getstate(0)
@@ -211,9 +218,9 @@ def makepath_coupled(model_hybrid,T,h,method,sample_rate,voxel):
             firing_event_hybrid,firing_event_exact  = findreaction_coupled(model_hybrid.events,model_exact.events,agg_rate,r)
 
             if isinstance(firing_event_hybrid,Reaction):
-                model_hybrid.react(firing_event_hybrid)
+                firing_event_hybrid.react()
             if isinstance(firing_event_exact,Reaction):
-                model_exact.react(firing_event_exact)
+                firing_event_exact.react()
         clock[k] = clock[k-1] + t_next
         path[k][0:model_hybrid.Nspecies] = model_hybrid.getstate(0)
         path[k][model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getstate(0)
@@ -227,7 +234,7 @@ def findreaction(events,agg_rate,r):
             if r<rate_sum/agg_rate:
                 return e
 
-null = NullReaction()
+null = NullEvent()
 def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
     rate_sum = 0.
     for i in range(len(events_hybrid)):
