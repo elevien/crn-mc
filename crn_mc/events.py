@@ -21,9 +21,9 @@ def exponential0(rate):
 
 class Event:
     def __init__(self):
-        self.updateRate()
+        self.updaterate()
 
-    def updateRate(self):
+    def updaterate(self):
         return None
 
 class NullReaction:
@@ -31,7 +31,7 @@ class NullReaction:
         super().__init__()
     def __str__(self):
         return "Null Reaction"
-    def updateRate(self):
+    def updaterate(self):
         return None
 
 
@@ -67,17 +67,17 @@ class Reaction(Event):
         s = s[:-1]
         return s
 
-    def updateRate(self):
+    def updaterate(self):
 
         # works for order =1,2
         if self.speed == SLOW:
-            self.computeRateSlow()
+            self.computerate_slow()
         elif self.speed == FAST:
-            self.computeRateFast()
+            self.computerate_fast()
 
         return None
 
-    def computeRateSlow(self):
+    def computerate_slow(self):
         a = self.intensity
         for s in self.reactants:
                 base = s[0].value[self.voxel]
@@ -86,7 +86,7 @@ class Reaction(Event):
         self.rate = a/self.scale
         return None
 
-    def computeRateFast(self):
+    def computerate_fast(self):
         a = self.intensity
         for s in self.reactants:
             base = s[0].value[self.voxel]

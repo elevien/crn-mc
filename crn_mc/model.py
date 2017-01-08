@@ -18,14 +18,14 @@ class Model:
         self.systemState = []
         self.events = []
 
-    def addSpecies(self,name,exponent,value):
+    def addspecies(self,name,exponent,value):
         scale = pow(self.systemSize,-exponent)
         species = Species(name,scale,self.mesh,value)
         self.systemState.append(species)
         self.Nspecies = self.Nspecies+1
         return None
 
-    def addReaction(self,reactants_vect,products_vect,intensity,scale,speed):
+    def addreaction(self,reactants_vect,products_vect,intensity,scale,speed):
         """ Add new reaction
         Input:
             - reactants [numpy array]
@@ -51,7 +51,7 @@ class Model:
             self.events.append(reaction)
         return None
 
-    def getStateInVoxel(self,voxel):
+    def getstate(self,voxel):
         #
         state = np.zeros(len(self.systemState))
         for i in range(len(self.systemState)):

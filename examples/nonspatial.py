@@ -26,24 +26,24 @@ model.systemState[1,0] = 100.
 
 r = array([0,1,0])
 p = array([1,1,0])
-model_hybrid.addReactionFast(r,p,1.*Np)
-model.addReaction(r,p,1.*Np)
+model_hybrid.addreactionFast(r,p,1.*Np)
+model.addreaction(r,p,1.*Np)
 
 r = array([1,0,0])
 p = array([0,0,0])
-model_hybrid.addReactionFast(r,p,1.)
-model.addReaction(r,p,1.)
+model_hybrid.addreactionFast(r,p,1.)
+model.addreaction(r,p,1.)
 
 r = array([0,1,0])
 p = array([0,0,1])
 # works if this is fast reaction channel
-model_hybrid.addReactionSlow(r,p,1.)
-model.addReaction(r,p,1.)
+model_hybrid.addreactionSlow(r,p,1.)
+model.addreaction(r,p,1.)
 
 r = array([0,0,1])
 p = array([0,1,0])
-model_hybrid.addReactionSlow(r,p,1.)
-model.addReaction(r,p,1.)
+model_hybrid.addreactionSlow(r,p,1.)
+model.addreaction(r,p,1.)
 
 
 

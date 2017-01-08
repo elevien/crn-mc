@@ -59,7 +59,7 @@ def gillespie(model,T):
 
         # update rates
         for e in model.events:
-            e.updateRate()
+            e.updaterate()
         k = k+1
     #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]
@@ -68,7 +68,7 @@ def rre_f(t,y,m):
     # make copy of model
     m.systemState = y.reshape(m.ss_d1,m.mesh.Nvoxels)
     for e in m.eventsFast:
-        e.updateRate()
+        e.updaterate()
     rates = np.zeros(len(m.systemState))
     for e in m.eventsFast:
         rates = rates + e.direction[:,0].reshape(len(m.systemState),)*e.rate
@@ -78,7 +78,7 @@ def rre_f(t,y,m):
 def chvRHS(t,y,m,sample_rate):
     m.systemState = y[0:len(m.systemState)].reshape(m.ss_d1,m.mesh.Nvoxels)
     for e in m.eventsFast:
-        e.updateRate()
+        e.updaterate()
     agg_rate = sum((e.rate for e in m.eventsSlow))+sample_rate
     rhs = np.zeros(len(m.systemState)+1)
     for e in m.eventsFast:
@@ -111,9 +111,9 @@ def chv(model,T,h,method,sample_rate):
         t_next = tj.y[len(model.systemState)]
 
         for e in model.eventsSlow:
-            e.updateRate()
+            e.updaterate()
         for e in model.eventsFast:
-            e.updateRate()
+            e.updaterate()
 
         # update slow species
         r = np.random.rand()
@@ -162,18 +162,18 @@ def strang_split(model,T,h0,h,method):
                 # fire slow reaction and update system state
                 model.systemState = model.systemState + direction
                 for e in model.eventsFast:
-                    e.updateRate()
+                    e.updaterate()
                 for e in model.eventsSlow:
-                    e.updateRate()
+                    e.updaterate()
 
         # integrate 1 step
         rre.set_initial_value(model.systemState,0)
         rre.integrate(h0)
         model.systemState = rre.y
         for e in model.eventsFast:
-            e.updateRate()
+            e.updaterate()
         for e in model.eventsSlow:
-            e.updateRate()
+            e.updaterate()
 
         # gillespie 1/2 step
         tY = clock[k]+h0/2.
@@ -191,9 +191,9 @@ def strang_split(model,T,h0,h,method):
 
                 model.systemState =  model.systemState + direction
                 for e in model.eventsFast:
-                    e.updateRate()
+                    e.updaterate()
                 for e in model.eventsSlow:
-                    e.updateRate()
+                    e.updaterate()
 
         # store path
         path[k][:] = model.systemState
@@ -237,9 +237,9 @@ def gillespie_hybrid(model,T,h1,h2,method):
 
         # update rates
         for e in model.eventsFast:
-            e.updateRate()
+            e.updaterate()
         for e in model.eventsSlow:
-            e.updateRate()
+            e.updaterate()
         k = k+1
     #print("k = "+str(k))
     return path[0:k-1],clock[0:k-1]

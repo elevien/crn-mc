@@ -21,7 +21,7 @@ class Model:
         self.systemState = np.zeros((self.Nspecies,self.mesh.Nvoxels))
         self.events = []
 
-    def addReaction(self,reactants,products,intensity):
+    def addreaction(self,reactants,products,intensity):
         """ Add new reaction
         Input:
             - reactants [numpy array]
@@ -64,13 +64,13 @@ class ModelHybrid(Model):
         self.eventsFast = []
         self.eventsSlow = []
 
-    def addReactionSlow(self,reactants,products,intensity):
+    def addreactionSlow(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
             reaction = Reaction(self,i,reactants,products,intensity)
             self.eventsSlow.append(reaction)
         return None
 
-    def addReactionFast(self,reactants,products,intensity):
+    def addreactionFast(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
             reaction = Reaction(self,i,reactants,products,intensity)
             self.eventsFast.append(reaction)
@@ -89,7 +89,7 @@ class ModelHybridSplitCoupled(Model):
         self.eventsFast = []
         self.eventsSlow = []
 
-    def addReactionSlow(self,reactants,products,intensity):
+    def addreactionSlow(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
             reaction_common = ReactionHybridSlow_SplitCommon(self,i,reactants,products,intensity)
             self.eventsSlow.append(reaction_common)
@@ -99,7 +99,7 @@ class ModelHybridSplitCoupled(Model):
             self.eventsSlow.append(reaction_slow)
         return None
 
-    def addReactionFast(self,reactants,products,intensity):
+    def addreactionFast(self,reactants,products,intensity):
         for i in range(self.mesh.Nvoxels):
             reaction = ReactionHybridFast_Hybrid(self,i,reactants,products,intensity)
             self.eventsFast.append(reaction)
@@ -128,27 +128,27 @@ class Event:
         self.model = model
         self.time_internal = 0. # for nrm
         self.wait_internal = exponential0(1.) # for nrm
-        self.updateRate()
+        self.updaterate()
         if self.rate>0: # for nrm
             self.wait_absolute = (self.wait_internal-self.time_internal)/self.rate
         else:
             self.wait_absolute = exp_max
 
     def fire(self,delta):
-        self.updateRate()
+        self.updaterate()
         self.wait_internal = exponential0(1.)
         self.time_internal = self.time_internal + self.rate*delta
         self.update_wait_absolute()
         return None
 
     def no_fire(self,delta):
-        self.updateRate()
+        self.updaterate()
         # wait_internal remains unchanged
         self.time_internal = self.time_internal + self.rate*delta
         self.update_wait_absolute()
         return None
 
-    def updateRate(self):
+    def updaterate(self):
         return None
 
     def update_wait_absolute(self):
@@ -171,7 +171,7 @@ class Diffusion(Event):
     def __str__(self):
         return "Diffusion of species "+str(self.species)+" from voxel "+str(self.voxel)+" to "+str(self.voxel_in)
 
-    def updateRate(self):
+    def updaterate(self):
         self.rate = self.diffusivity*self.model.systemState[self.species][self.voxel]
         return None
 
@@ -188,7 +188,7 @@ class Reaction(Event):
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
 
-    def updateRate(self):
+    def updaterate(self):
         # works for order =1,2
         a = self.intensity
         for i in range(self.model.Nspecies):
@@ -213,7 +213,7 @@ class ReactionHybridFast_Hybrid(Event):
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
 
-    def updateRate(self):
+    def updaterate(self):
         a1 = self.intensity
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
@@ -234,7 +234,7 @@ class ReactionHybridFast_Exact(Event):
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
 
-    def updateRate(self):
+    def updaterate(self):
         a2 = self.intensity
         for i in range(self.model.Nspecies):
             if self.reactants[i]>0:
@@ -256,7 +256,7 @@ class ReactionHybridSlow_SplitCommon(Event):
     def __str__(self):
         return "Reaction in voxel "+str(self.voxel)
 
-    def updateRate(self):
+    def updaterate(self):
         a1 = self.intensity
         a2 = self.intensity
         for i in range(self.model.Nspecies):
@@ -277,7 +277,7 @@ class ReactionHybridSlow_SplitHybrid(Event):
         super().__init__(model)
 
 
-    def updateRate(self):
+    def updaterate(self):
         a1 = self.intensity
         a2 = self.intensity
         for i in range(self.model.Nspecies):
@@ -297,7 +297,7 @@ class ReactionHybridSlow_SplitExact(Event):
         self.direction[model.Nspecies:2*model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
-    def updateRate(self):
+    def updaterate(self):
         a1 = self.intensity
         a2 = self.intensity
         for i in range(self.model.Nspecies):
@@ -322,7 +322,7 @@ class Reaction_SplitCommon(Event):
         self.direction[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
         super().__init__(model)
 
-    def updateRate(self):
+    def updaterate(self):
         a1 = self.intensity
         a2 = self.intensity
         for i in range(self.model.Nspecies):
@@ -343,7 +343,7 @@ class Reaction_SplitFine(Event):
         self.direction[0:model.Nspecies,self.voxel] = products-reactants
         super().__init__(model)
 
-    def updateRate(self):
+    def updaterate(self):
         a1 = self.intensity
         a2 = self.intensity
         for i in range(self.model.Nspecies):
@@ -366,7 +366,7 @@ class Reaction_SplitCoarse(Event):
         self.direction[model.Nspecies:2*model.Nspecies,self.voxel_coarse] = products-reactants
         super().__init__(model)
 
-    def updateRate(self):
+    def updaterate(self):
         # add up rates on fine grid
         a1 = 0.
         for j in range(self.model.mesh.Nvoxels):
