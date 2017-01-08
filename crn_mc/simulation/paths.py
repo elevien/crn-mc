@@ -64,6 +64,7 @@ def chvRHS(t,y,model,sample_rate):
                 direction = direction + float(p[0][1])
             rhs[i] = rhs[i]+ direction*e.rate
     rhs[len(model.systemState)] = 1.
+
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
 
@@ -112,9 +113,9 @@ def pathHybrid(model,T,h,method,sample_rate,voxel):
 
 def chvCoupledRHS(t,y,model_hybrid,model_exact,sample_rate):
     for i in range(model_exact.Nspecies):
-        model_exact.systemState[i].value[0] = y[i]
+        model_hybrid.systemState[i].value[0] = y[i]
     for i in range(model_hybrid.Nspecies):
-        model_hybrid.systemState[i].value[0] = y[i+model_exact.Nspecies]
+        model_exact.systemState[i].value[0] = y[i+model_exact.Nspecies]
     for e in model_exact.events:
         e.updateRate()
     for e in model_hybrid.events:
@@ -126,7 +127,8 @@ def chvCoupledRHS(t,y,model_hybrid,model_exact,sample_rate):
         agg_rate = agg_rate + rate_hybrid + rate_exact - min(rate_hybrid,rate_exact)
 
     rhs = np.zeros(2*model_exact.Nspecies+1)
-    fast = filter(lambda e: e.speed == FAST, model_exact.events)
+    fast = filter(lambda e: e.speed == FAST, model_hybrid.events)
+
     for e in fast:
         for i in range(model_exact.Nspecies):
             name = model_exact.systemState[i].name
@@ -139,6 +141,7 @@ def chvCoupledRHS(t,y,model_hybrid,model_exact,sample_rate):
                 direction = direction + float(p[0][1])
             rhs[i] = rhs[i]+ direction*e.rate
     rhs[2*model_exact.Nspecies] = 1.
+
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
 
@@ -170,7 +173,7 @@ def pathHybridSplitCoupled(model_hybrid,T,h,method,sample_rate,voxel):
         # solve
         y0[0:model_hybrid.Nspecies] = model_hybrid.getStateInVoxel(0)
         y0[model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getStateInVoxel(0)
-        y0[2*model_hybrid.Nspecies] = 1.
+        y0[2*model_hybrid.Nspecies] = 0.
         tj.set_initial_value(y0,0)
         tj.integrate(s1)
         ys1 = tj.y
@@ -181,6 +184,7 @@ def pathHybridSplitCoupled(model_hybrid,T,h,method,sample_rate,voxel):
             model_exact.systemState[i].value[0] = ys1[i+model_hybrid.Nspecies]
         t_next = tj.y[2*model_hybrid.Nspecies]
 
+
         for e in model_hybrid.events:
             e.updateRate()
         for e in model_exact.events:
@@ -190,26 +194,29 @@ def pathHybridSplitCoupled(model_hybrid,T,h,method,sample_rate,voxel):
         r = np.random.rand()
         agg_rate = 0.
         for i in range(len(model_hybrid.events)):
-            if model_hybrid.events[i] == SLOW:
+            if model_hybrid.events[i].speed == SLOW:
                 hybrid_rate = model_hybrid.events[i].rate
                 exact_rate = model_exact.events[i].rate
-                agg_rate = agg_rate + hybrid_rate + exact_rate - min(hybrid_rate,exact_rate )
-            else:
+                agg_rate = agg_rate + res(hybrid_rate,exact_rate )
+                agg_rate = agg_rate + res(exact_rate,hybrid_rate )
+                agg_rate = agg_rate + min(hybrid_rate,exact_rate )
+            elif model_hybrid.events[i].speed == FAST:
                 agg_rate = agg_rate + model_exact.events[i].rate
+            else:
+                print("PROBLEM")
+
 
         # find reaction
-
         if r>sample_rate/(agg_rate+sample_rate):
-            (firing_event_hybrid,firing_event_exact) = findHybridSplitCoupledReaction(model_hybrid.events,model_exact.events,agg_rate,r)
-            print(firing_event_hybrid)
-            print(firing_event_exact)
+            firing_event_hybrid,firing_event_exact  = findHybridSplitCoupledReaction(model_hybrid.events,model_exact.events,agg_rate,r)
+
             if isinstance(firing_event_hybrid,Reaction):
                 model_hybrid.react(firing_event_hybrid)
             if isinstance(firing_event_exact,Reaction):
                 model_exact.react(firing_event_exact)
         clock[k] = clock[k-1] + t_next
-        path[0][0:model_hybrid.Nspecies] = model_hybrid.getStateInVoxel(0)
-        path[0][model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getStateInVoxel(0)
+        path[k][0:model_hybrid.Nspecies] = model_hybrid.getStateInVoxel(0)
+        path[k][model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getStateInVoxel(0)
     return path[0:k+1],clock[0:k+1]
 
 def findHybridReaction(events,agg_rate,r):
@@ -220,24 +227,29 @@ def findHybridReaction(events,agg_rate,r):
             if r<rate_sum/agg_rate:
                 return e
 
-
+null = NullReaction()
 def findHybridSplitCoupledReaction(events_hybrid,events_exact,agg_rate,r):
     rate_sum = 0.
     for i in range(len(events_hybrid)):
-        if events_hybrid[i] == SLOW:
+        if events_hybrid[i].speed == SLOW:
             exact_rate = events_exact[i].rate
             hybrid_rate  = events_hybrid[i].rate
-            rate_sum = rate_sum + hybrid_rate - res(hybrid_rate,exact_rate)
+            rate_sum = rate_sum + res(hybrid_rate,exact_rate)
             if r<rate_sum/agg_rate:
-                return (events_hybrid[i],None)
-            rate_sum = rate_sum + exact_rate  - res(hybrid_rate,exact_rate)
+                return events_hybrid[i],null
+            rate_sum = rate_sum + res(exact_rate,exact_rate)
             if r<rate_sum/agg_rate:
-                return (None,events_exact[i])
-            ate_sum = rate_sum + res(hybrid_rate,exact_rate)
+                return null,events_exact[i]
+            rate_sum = rate_sum + min(hybrid_rate,exact_rate)
             if r<rate_sum/agg_rate:
-                return (events_hybrid[i],events_exact[i])
-        else:
+                return events_hybrid[i],events_exact[i]
+        elif events_hybrid[i].speed == FAST:
             exact_rate = events_exact[i].rate
             rate_sum = rate_sum + exact_rate
             if r<rate_sum/agg_rate:
-                return (events_hybrid[i],None)
+                return null,events_exact[i]
+        else:
+            print("PROBLEM")
+
+    print(rate_sum/agg_rate)
+    return null,null

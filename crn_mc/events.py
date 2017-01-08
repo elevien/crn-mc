@@ -26,6 +26,14 @@ class Event:
     def updateRate(self):
         return None
 
+class NullReaction:
+    def __init__(self):
+        super().__init__()
+    def __str__(self):
+        return "Null Reaction"
+    def updateRate(self):
+        return None
+
 
 class Reaction(Event):
     """
