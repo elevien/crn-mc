@@ -49,7 +49,7 @@ def gillespie(model,T,voxel):
     return path[0:k-1],clock[0:k-1]
 
 def chvrhs(t,y,model,sample_rate):
-    for i in range(model.Nspecies):
+    for i in range(model.dimension):
         model.systemState[i].value[0] = y[i]
     for e in model.events:
         e.updaterate()
@@ -58,10 +58,10 @@ def chvrhs(t,y,model,sample_rate):
     for s in slow:
         agg_rate = agg_rate + s.rate
 
-    rhs = np.zeros(model.Nspecies+1)
+    rhs = np.zeros(model.dimension+1)
     fast = filter(lambda e: e.speed == FAST, model.events)
     for e in fast:
-        for i in range(model.Nspecies):
+        for i in range(model.dimension):
             name = model.systemState[i].name
             r = list(filter(lambda e: e[0].name == name, e.reactants))
             p = list(filter(lambda e: e[0].name == name, e.products))
@@ -79,9 +79,7 @@ def chvrhs(t,y,model,sample_rate):
 
 
 def makepath(model,T,h,method,sample_rate,voxel):
-
-    # there is a bug here. Making sample rate large has problems
-
+    """ Compute paths of hybrid model using CHV method. """
     path = np.zeros((Nt,len(model.systemState)))
     path[0][:] = model.getstate(0)
     clock = np.zeros(Nt)
@@ -99,9 +97,9 @@ def makepath(model,T,h,method,sample_rate,voxel):
         tj.integrate(s1)
         ys1 = tj.y
 
-        for i in range(model.Nspecies):
+        for i in range(model.dimension):
             model.systemState[i].value[0] = ys1[i]
-        t_next = tj.y[model.Nspecies]
+        t_next = tj.y[model.dimension]
 
         for e in model.events:
             e.updaterate()
@@ -119,10 +117,10 @@ def makepath(model,T,h,method,sample_rate,voxel):
     return path[0:k+1],clock[0:k+1]
 
 def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
-    for i in range(model_exact.Nspecies):
+    for i in range(model_exact.dimension):
         model_hybrid.systemState[i].value[0] = y[i]
-    for i in range(model_hybrid.Nspecies):
-        model_exact.systemState[i].value[0] = y[i+model_exact.Nspecies]
+    for i in range(model_hybrid.dimension):
+        model_exact.systemState[i].value[0] = y[i+model_exact.dimension]
     for e in model_exact.events:
         e.updaterate()
     for e in model_hybrid.events:
@@ -133,11 +131,11 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
         rate_exact = model_exact.events[i].rate
         agg_rate = agg_rate + rate_hybrid + rate_exact - min(rate_hybrid,rate_exact)
 
-    rhs = np.zeros(2*model_exact.Nspecies+1)
+    rhs = np.zeros(2*model_exact.dimension+1)
     fast = filter(lambda e: e.speed == FAST, model_hybrid.events)
 
     for e in fast:
-        for i in range(model_exact.Nspecies):
+        for i in range(model_exact.dimension):
             name = model_exact.systemState[i].name
             r = list(filter(lambda e: e[0].name == name, e.reactants))
             p = list(filter(lambda e: e[0].name == name, e.products))
@@ -147,7 +145,7 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
             if p:
                 direction = direction + float(p[0][1])
             rhs[i] = rhs[i]+ direction*e.rate
-    rhs[2*model_exact.Nspecies] = 1.
+    rhs[2*model_exact.dimension] = 1.
 
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
@@ -157,39 +155,39 @@ def res(x,y):
 
 
 def makepath_coupled(model_hybrid,T,h,method,sample_rate,voxel):
-
+    """ Compute paths of coupled exact-hybrid model using CHV method. """ 
     # make copy of model with exact dynamics
     model_exact = copy.deepcopy(model_hybrid)
     for e in model_exact.events:
         e.speed = SLOW
 
     # setup integrator
-    path = np.zeros((Nt,2*model_hybrid.Nspecies))
-    path[0][0:model_hybrid.Nspecies] = model_hybrid.getstate(0)
-    path[0][model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getstate(0)
+    path = np.zeros((Nt,2*model_hybrid.dimension))
+    path[0][0:model_hybrid.dimension] = model_hybrid.getstate(0)
+    path[0][model_hybrid.dimension:2*model_hybrid.dimension] = model_exact.getstate(0)
     clock = np.zeros(Nt)
 
     k = 0
     tj = ode(chvrhs_coupled).set_integrator(method,atol = h,rtol = h)
     tj.set_f_params(model_hybrid,model_exact,sample_rate)
-    y0 = np.zeros(2*model_hybrid.Nspecies+1)
+    y0 = np.zeros(2*model_hybrid.dimension+1)
 
     while (k+1<Nt) and (clock[k]<T):
         k = k+1
         s1 = tryexponential(1)
         # solve
-        y0[0:model_hybrid.Nspecies] = model_hybrid.getstate(0)
-        y0[model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getstate(0)
-        y0[2*model_hybrid.Nspecies] = 0.
+        y0[0:model_hybrid.dimension] = model_hybrid.getstate(0)
+        y0[model_hybrid.dimension:2*model_hybrid.dimension] = model_exact.getstate(0)
+        y0[2*model_hybrid.dimension] = 0.
         tj.set_initial_value(y0,0)
         tj.integrate(s1)
         ys1 = tj.y
 
-        for i in range(model_hybrid.Nspecies):
+        for i in range(model_hybrid.dimension):
             model_hybrid.systemState[i].value[0] = ys1[i]
-        for i in range(model_hybrid.Nspecies):
-            model_exact.systemState[i].value[0] = ys1[i+model_hybrid.Nspecies]
-        t_next = tj.y[2*model_hybrid.Nspecies]
+        for i in range(model_hybrid.dimension):
+            model_exact.systemState[i].value[0] = ys1[i+model_hybrid.dimension]
+        t_next = tj.y[2*model_hybrid.dimension]
 
 
         for e in model_hybrid.events:
@@ -222,8 +220,8 @@ def makepath_coupled(model_hybrid,T,h,method,sample_rate,voxel):
             if isinstance(firing_event_exact,Reaction):
                 firing_event_exact.react()
         clock[k] = clock[k-1] + t_next
-        path[k][0:model_hybrid.Nspecies] = model_hybrid.getstate(0)
-        path[k][model_hybrid.Nspecies:2*model_hybrid.Nspecies] = model_exact.getstate(0)
+        path[k][0:model_hybrid.dimension] = model_hybrid.getstate(0)
+        path[k][model_hybrid.dimension:2*model_hybrid.dimension] = model_exact.getstate(0)
     return path[0:k+1],clock[0:k+1]
 
 def findreaction(events,agg_rate,r):

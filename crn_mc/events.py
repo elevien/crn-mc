@@ -87,7 +87,8 @@ class Reaction(Event):
     def computerate_fast(self):
         """ Compute fast rates based on leading order term in ma rates. """
 
-        # note that this expression should NOT involve any scales
+        # this is the right hand side of the reaction rate equations
+        # note that the expression should NOT involve any scales
         a = self.intensity
         for s in self.reactants:
             base = s[0].value[self.voxel]

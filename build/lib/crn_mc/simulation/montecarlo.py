@@ -26,7 +26,7 @@ def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate):
     Q_hybrid = 0
     for k in range(Nruns_coupled):
         path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
-        Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.Nspecies])
+        Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.dimension])
     Q_coupled = Q_coupled/float(Nruns_coupled)
 
     #for k in range(Nruns_hybrid):

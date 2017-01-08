@@ -7,86 +7,74 @@ import copy
 
 
 
-def mc_crude(model,T,Np,delta,species,path_method):
-    Q = []
-    eps = pow(Np,-delta)
-    Err = []
+def montecarlo_crude(model,T,delta,species,voxel,method,sample_rate):
+    """ Obtains statistics of model using a crude monte carlo esimator. """
+    samples = []
+    standdev = []
+    eps = pow(model.systemSize,-delta)
+    h = eps
+
     M0 = 10
-    Mmax = 100000
+    Mmax = 10e5
+
+    # get the intial conditions
+    ic = np.zeros(model.dimension)
+    for j in range(model.dimension):
+        ic[j] = model.systemState[j].value[0]
+
     # do a fixed number of prelimnary simulations
     for i in range(M0):
-        path,clock= path_method()
-        Q = np.append(Q,path[-1,species])
+        path,clock= makepath(model,T,h,method,sample_rate,voxel)
+        samples = np.append(samples,path[-1,species])
+        # reset initial conditions
+        for j in range(model.dimension):
+            model.systemState[j].value[0] = ic[j]
     i = 0
-    Err.append(np.std(Q))
-    while Err[i-1]>eps and i<Mmax:
-        path,clock= path_method()
-        Q = np.append(Q,path[-1,species])
-        Err.append(np.std(Q))
+    standdev.append(np.std(samples))
+    while standdev[i-1]>eps and i<Mmax:
+        path,clock= makepath(model,T,h,method,sample_rate,voxel)
+        samples = np.append(samples,path[-1,species])
+        # reset initial conditions
+        for j in range(model.dimension):
+            model.systemState[j].value[0] = ic[j]
+        standdev.append(np.std(samples/(i+M0)))
         i = i+1
-        #print(Err[i-1])
-    return sum(Q),Err
+    return sum(samples/(i+M0)),standdev[1:-1]
 
-def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate,species):
-    Q = []
-    eps = pow(Np,-delta)
-    #eps = 1.0
-    Err = []
+def montecarlo_coupled(model,T,delta,species,voxel,method,sample_rate):
+    """ Obtains statistics of model using a crude monte carlo esimator. """
+    samples = []
+    standdev = []
+    eps = pow(model.systemSize,-delta)
+    h = eps
+
     M0 = 10
-    Mmax = 100000
+    Mmax = 10e5
+
+    # get the intial conditions
+    ic = np.zeros(model.dimension)
+    for j in range(model.dimension):
+        ic[j] = model.systemState[j].value[0]
+
     # do a fixed number of prelimnary simulations
     for i in range(M0):
-        path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
-        Q = np.append(Q,path[-1,species]-path[-1,species+model_coupled.Nspecies])
+        path,clock= makepath_coupled(model,T,h,method,sample_rate,voxel)
+        sample = path[-1,species+model.dimension]-path[-1,species]
+        samples = np.append(samples,sample)
+        # reset initial conditions
+        for j in range(model.dimension):
+            model.systemState[j].value[0] = ic[j]
     i = 0
-    Err.append(np.std(Q))
-    while Err[i-1]>eps and i<Mmax:
-        path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
-        Q = np.append(Q,path[-1,species]-path[-1,species+model_coupled.Nspecies])
-        Err.append(np.std(Q))
+    standdev.append(np.std(samples))
+    while standdev[i-1]>eps and i<Mmax:
+        path,clock= makepath_coupled(model,T,h,method,sample_rate,voxel)
+        sample = path[-1,species+model.dimension]-path[-1,species]
+        samples = np.append(samples,sample)
+        # reset initial conditions
+        for j in range(model.dimension):
+            model.systemState[j].value[0] = ic[j]
+        standdev.append(np.std(samples/(i+M0)))
         i = i+1
-    q2,Err2 = mc_crude(model_hybrid,T,Np,delta,species,lambda: chv(model_hybrid,T,eps,'lsoda',sample_rate))
-
-    return sum(Q)+q2,Err
-
-def mc_crudeDiffusions(model,T,eps,delta):
-
-    clock_quantized = np.linspace(0,T,resolution)
-    Nt  = len(clock_quantized)
-    average_quantized = np.zeros((len(model.systemState),model.mesh.Nvoxels))
-
-    for i in range(Nruns):
-        print("run "+str(i)+"/"+str(Nruns))
-        model.syste_state = initial_conditions
-        path,clock = gillespie(model,T)
-        average_quantized = average_quantized + path[-1]
-
-    average_quantized = average_quantized/Nruns
-
-    return average_quantized
-
-def mc_splitCoupledDiffusions(models,initial_conditions,T,runs,resolution):
-
-    level = len(models)
-    clock_quantized = np.linspace(0,T,resolution)
-    Nt  = len(clock_quantized)
-    path_quantized = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
-
-    for i in range(levels):
-        for j in range(runs[i]):
-            path_average_o,clock_o = mc_crude(model,Nruns,resolution)
-            path_average = path_average + path_average_o
-            path_clock = path_clock + path_clock_o
-
-    return path_quantized,clock_quantized
-
-def quantize_path(path,clock,clock_quantized):
-    path_quantized = np.zeros((len(clock_quantized),len(path[0,:,0]),len(path[0,0])))
-    path_quantized[0] = path[0]
-    i = 1.
-    for k in range(len(clock_quantized)):
-        while clock[i] < clock_quantized[k] and i+1<len(clock):
-            path_quantized[k] = path[i]
-            i = i+1
-
-    return path_quantized
+    Q1 = sum(samples/(i+M0))
+    Q2,a = montecarlo_crude(model,T,delta,species,voxel,method,sample_rate)
+    return Q1+Q2,standdev[1:-1]

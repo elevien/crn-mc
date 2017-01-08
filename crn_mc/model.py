@@ -11,18 +11,18 @@ class Model:
     def __init__(self,mesh,systemSize):
         self.mesh = mesh
         self.systemSize = systemSize
-        self.Nspecies = 0
+        self.dimension = 0
         self.systemState = []
         self.events = []
 
     def addspecies(self,name,exponent,value):
-        """ Adds new species to the model """
+        """ Adds new species to the model and returns that species """
 
         scale = pow(self.systemSize,-exponent)
         species = Species(name,scale,self.mesh,value)
         self.systemState.append(species)
-        self.Nspecies = self.Nspecies+1
-        return None
+        self.dimension = self.dimension+1
+        return species
 
     def addreaction(self,reactants_vect,products_vect,intensity,exponent,speed):
         """ Add new reaction to the model
@@ -35,7 +35,7 @@ class Model:
             - speed -- "FAST","SLOW"...
 
         Output:
-            None
+            - reaction
         """
         reactants = []
         products = []
@@ -54,7 +54,7 @@ class Model:
             scale = pow(self.systemSize,-exponent)
             reaction = Reaction(i,reactants,products,intensity,scale,speed)
             self.events.append(reaction)
-        return None
+        return reaction
 
     def getstate(self,voxel):
         """ Return state of each species in voxel """
