@@ -42,7 +42,7 @@ def montecarlo_crude(model,T,delta,species,voxel,method,sample_rate):
     return sum(samples/(i+M0)),standdev[1:-1]
 
 def montecarlo_coupled(model,T,delta,species,voxel,method,sample_rate):
-    """ Obtains statistics of model using a crude monte carlo esimator. """
+    """ Obtains statistics of model using a coupled monte carlo esimator. """
     samples = []
     standdev = []
     eps = pow(model.systemSize,-delta)

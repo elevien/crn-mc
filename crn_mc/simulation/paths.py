@@ -155,7 +155,7 @@ def res(x,y):
 
 
 def makepath_coupled(model_hybrid,T,h,method,sample_rate,voxel):
-    """ Compute paths of coupled exact-hybrid model using CHV method. """ 
+    """ Compute paths of coupled exact-hybrid model using CHV method. """
     # make copy of model with exact dynamics
     model_exact = copy.deepcopy(model_hybrid)
     for e in model_exact.events:
@@ -255,6 +255,4 @@ def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
                 return null,events_exact[i]
         else:
             print("PROBLEM")
-
-    print(rate_sum/agg_rate)
     return null,null
