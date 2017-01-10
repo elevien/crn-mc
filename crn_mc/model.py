@@ -15,16 +15,18 @@ class Model:
         self.systemState = []
         self.events = []
 
-    def addspecies(self,name,exponent,value):
+    def addspecies(self,name,exponent=0.,value=None,*args,**kwargs):
         """ Adds new species to the model and returns that species """
 
         scale = pow(self.systemSize,-exponent)
+        if value == None:
+            value = np.zeros(self.mesh.Nvoxels)
         species = Species(name,scale,self.mesh,value)
         self.systemState.append(species)
         self.dimension = self.dimension+1
         return species
 
-    def addreaction(self,reactants_vect,products_vect,intensity,exponent,speed):
+    def addreaction(self,reactants_vect,products_vect,intensity,exponent=0.,*args,**kwargs):
         """ Add new reaction to the model
 
         Input:
@@ -52,7 +54,7 @@ class Model:
 
         for i in range(self.mesh.Nvoxels):
             scale = pow(self.systemSize,-exponent)
-            reaction = Reaction(i,reactants,products,intensity,scale,speed)
+            reaction = Reaction(i,reactants,products,intensity,scale)
             self.events.append(reaction)
         return reaction
 

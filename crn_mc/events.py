@@ -29,12 +29,11 @@ class NullEvent:
     def updaterate(self):
         return None
 
-
 class Reaction(Event):
     """ An event representing the reaction of some number of molecules. """
 
-    def __init__(self,voxel,reactants,products,intensity,scale,speed):
-        """ Make a reaction.
+    def __init__(self,voxel,reactants,products,intensity,scale):
+        """ Reaction constructor.
 
         Input:
             - voxel -- integer
@@ -48,7 +47,7 @@ class Reaction(Event):
         self.products = products
         self.intensity = intensity
         self.scale = scale
-        self.speed = speed
+        self.speed = SLOW
         self.rate = 0.
         super().__init__()
 

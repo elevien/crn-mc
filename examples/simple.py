@@ -35,11 +35,6 @@ r = [["C",1]]
 p = [["D",1]]
 m.addreaction(r,p,1.,0.,SLOW)
 
-
-
-
-
-
 #path,clock = makepath(m,T,pow(systemSize,-2.),'lsoda',1.,0)
 
 delta = 1.5

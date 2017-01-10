@@ -21,8 +21,6 @@ def get_coarseMesh_voxel(voxel,coupling):
         i = i+1
     return i
 
-
-
 def make_lattice1d(Nx,L):
     # generates uniform 1d lattice on [0,L]
     topology = np.zeros((Nx,Nx))

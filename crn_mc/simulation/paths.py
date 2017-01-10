@@ -17,37 +17,6 @@ def tryexponential(rate):
     except ValueError:
         print("next jump time is at infinity")
 
-def gillespie(model,T,voxel):
-    """ The Gillespie for models with only slow reactions. """
-    path = np.zeros((Nt,len(model.systemState)))
-    path[0][:] = model.getstate(0)
-    clock = np.zeros(Nt)
-
-    k = 1
-    for e in model.events:
-        e.updaterate()
-    agg_rate = sum((e.rate for e in model.events))
-    while (k<Nt) and (clock[k-1]<T) and (agg_rate >0):
-        # compute aggregate rate
-        delta = tryexponential(agg_rate)
-
-        # find next reaction
-        r =  np.random.rand()
-        firing_event = find_reaction(model.events,agg_rate,r)
-        # update system state
-
-        clock[k] = clock[k-1]+delta
-        model.react(firing_event)
-        path[k][:] = model.getstate(0)
-
-        # update rates
-        for e in model.events:
-            e.updaterate()
-        k = k+1
-        agg_rate = sum((e.rate for e in model.events))
-    #print("k = "+str(k))
-    return path[0:k-1],clock[0:k-1]
-
 def chvrhs(t,y,model,sample_rate):
     for i in range(model.dimension):
         model.systemState[i].value[0] = y[i]
@@ -77,9 +46,9 @@ def chvrhs(t,y,model,sample_rate):
     return rhs
 
 
-
-def makepath(model,T,h,method,sample_rate,voxel):
+def makepath(model,T,h,method='lsoda',sample_rate = 0.,*args,**kwargs):
     """ Compute paths of hybrid model using CHV method. """
+    voxel = 0.
     path = np.zeros((Nt,len(model.systemState)))
     path[0][:] = model.getstate(0)
     clock = np.zeros(Nt)
@@ -105,16 +74,25 @@ def makepath(model,T,h,method,sample_rate,voxel):
             e.updaterate()
         # update slow species
         r = np.random.rand()
-        slow_events = filter(lambda e: e.speed == SLOW, model.events)
+        stochastic_events = getstochasticevents(model)
         agg_rate = 0.
-        for s in slow_events:
-            agg_rate = agg_rate + s.rate
+        for e in stochastic_events:
+            agg_rate = agg_rate + e.rate
         if r>sample_rate/(agg_rate+sample_rate):
             firing_event = findreaction(model.events,agg_rate,r)
             firing_event.react()
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.getstate(0)
     return path[0:k+1],clock[0:k+1]
+
+def getstochasticevents(model):
+    stochastic_events = []
+    for e in model.events:
+        if e.scale == 0.:
+            stochastic_events.append(e)
+    return stochastic_events
+
+
 
 def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
     for i in range(model_exact.dimension):
@@ -144,7 +122,7 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
                 direction = direction - float(r[0][1])
             if p:
                 direction = direction + float(p[0][1])
-            rhs[i] = rhs[i]+ direction*e.rate
+            rhs[i] = rhs[i] + direction*e.rate
     rhs[2*model_exact.dimension] = 1.
 
     rhs = rhs/(agg_rate+sample_rate)
@@ -154,8 +132,9 @@ def res(x,y):
     return x - min(x,y)
 
 
-def makepath_coupled(model_hybrid,T,h,method,sample_rate,voxel):
+def makepath_coupled(model_hybrid,T,h,method='lsoda',sample_rate = 0.,*args,**kwargs):
     """ Compute paths of coupled exact-hybrid model using CHV method. """
+    voxel = 0
     # make copy of model with exact dynamics
     model_exact = copy.deepcopy(model_hybrid)
     for e in model_exact.events:
