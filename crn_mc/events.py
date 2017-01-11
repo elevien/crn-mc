@@ -81,7 +81,7 @@ class Reaction(Event):
 
         if self.hybridType == SLOW:
             self.computerate_slow()
-        elif self.hybridType == FAST:
+        else:
             self.computerate_fast()
 
         return None
@@ -112,7 +112,9 @@ class Reaction(Event):
 
     def react(self):
         """ update species involved in reaction accoding to stoichiometry. """
-        if self.hybridType != NULL:
+        if self.hybridType == NULL:
+            # NULL reactions need special treatment, since they don't alter all
+            # their products and reactants
             for r in self.reactants:
                 if r[0].scale == self.scale:
                     r[0].value[self.voxel] = r[0].value[self.voxel]-(1./r[0].scale)*float(r[1])
@@ -120,8 +122,6 @@ class Reaction(Event):
                 if p[0].scale == self.scale:
                     p[0].value[self.voxel] = p[0].value[self.voxel]+(1./p[0].scale)*float(p[1])
         else:
-            # NULL reactions need special treatment, since they don't alter all
-            # their products and reactants
             for r in self.reactants:
                 r[0].value[self.voxel] = r[0].value[self.voxel]-(1./r[0].scale)*float(r[1])
             for p in self.products:

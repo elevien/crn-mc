@@ -23,8 +23,11 @@ def chvrhs(t,y,model,sample_rate):
     for e in model.events:
         e.updaterate()
     slow = filter(lambda e: e.hybridType == SLOW, model.events)
+    null = filter(lambda e: e.hybridType == NULL, model.events)
     agg_rate = 0.
     for s in slow:
+        agg_rate = agg_rate + s.rate
+    for s in null:
         agg_rate = agg_rate + s.rate
 
     rhs = np.zeros(model.dimension+1)
@@ -46,12 +49,15 @@ def chvrhs(t,y,model,sample_rate):
     return rhs
 
 
-def makepath(model,T,h,method='lsoda',sample_rate = 0.,*args,**kwargs):
+def makepath(model,T,h,method='lsoda',sample_rate = 0.,treatment='hybrid',*args,**kwargs):
     """ Compute paths of hybrid model using CHV method. """
     voxel = 0.
     path = np.zeros((Nt,len(model.systemState)))
     path[0][:] = model.getstate(0)
     clock = np.zeros(Nt)
+    if treatment=='exact':
+        for e in model.events:
+            e.hybridType = SLOW
 
     k = 0
     tj = ode(chvrhs).set_integrator(method,atol = h,rtol = h)
@@ -88,7 +94,7 @@ def makepath(model,T,h,method='lsoda',sample_rate = 0.,*args,**kwargs):
 def getstochasticevents(model):
     stochastic_events = []
     for e in model.events:
-        if e.hybridType == SLOW:
+        if e.hybridType != FAST:
             stochastic_events.append(e)
     return stochastic_events
 
@@ -186,8 +192,8 @@ def makepath_coupled(model_hybrid,T,h,method='lsoda',sample_rate = 0.,*args,**kw
                 agg_rate = agg_rate + min(hybrid_rate,exact_rate )
             elif model_hybrid.events[i].hybridType == FAST:
                 agg_rate = agg_rate + model_exact.events[i].rate
-            else:
-                print("PROBLEM")
+            #else:
+            #    print("PROBLEM")
 
 
         # find reaction
@@ -206,7 +212,7 @@ def makepath_coupled(model_hybrid,T,h,method='lsoda',sample_rate = 0.,*args,**kw
 def findreaction(events,agg_rate,r):
     rate_sum = 0.
     for e in events:
-        if e.hybridType == SLOW:
+        if e.hybridType != FAST:
             rate_sum = rate_sum +e.rate
             if r<rate_sum/agg_rate:
                 return e
@@ -232,6 +238,6 @@ def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
             rate_sum = rate_sum + exact_rate
             if r<rate_sum/agg_rate:
                 return null,events_exact[i]
-        else:
-            print("PROBLEM")
+        #else:
+        #    print("PROBLEM")
     return null,null
