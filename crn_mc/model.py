@@ -18,7 +18,7 @@ class Model:
     def addspecies(self,name,exponent=0.,value=None,*args,**kwargs):
         """ Adds new species to the model and returns that species """
 
-        scale = pow(self.systemSize,-exponent)
+        scale = pow(self.systemSize,exponent)
         if value == None:
             value = np.zeros(self.mesh.Nvoxels)
         species = Species(name,scale,self.mesh,value)
@@ -34,7 +34,7 @@ class Model:
             - products -- array of tuples (Species name,Integer>0)
             - intensity -- float
             - exponent -- float
-            - speed -- "FAST","SLOW"...
+            - hybridType -- "FAST","SLOW"...
 
         Output:
             - reaction
@@ -53,7 +53,7 @@ class Model:
             products.append([species,coeff])
 
         for i in range(self.mesh.Nvoxels):
-            scale = pow(self.systemSize,-exponent)
+            scale = pow(self.systemSize,exponent)
             reaction = Reaction(i,reactants,products,intensity,scale)
             self.events.append(reaction)
         return reaction

@@ -5,12 +5,9 @@ from .species import *
 
 
 EXP_MAX =  10e20
-FAST = 0
-SLOW = 1
-SMALL = 2
-COUPLED_FAST = 3
-COUPLED_SLOW = 4
-COUPLED_COMMON = 5
+FAST = "FAST"
+SLOW = "SLOW"
+NULL = "NULL"
 
 
 class Event:
@@ -47,12 +44,29 @@ class Reaction(Event):
         self.products = products
         self.intensity = intensity
         self.scale = scale
-        self.speed = SLOW
+
+        # determine how to treat the reaction in the thermodynamic limit
+        self.hybridType = 0.
+        if self.scale == 1.:
+            self.hybridType = SLOW
+        else:
+            self.hybridType = FAST
+
+        # check if reaction vanishes is thermodynamic limit
+
+        # doesn't handle events with \gamma_i  = rho_j = 0 for some (S_0) species
+        # but \gamma_i > \rho_j for some (S_1) species
+        # in such instances reaction only appears in slow species evolution
+
+        for p in products:
+            if p[0].scale>self.scale:
+                self.hybridType = NULL
+
         self.rate = 0.
         super().__init__()
 
     def __str__(self):
-        s = "In voxel "+str(self.voxel)+" with rate = "+str(self.rate)+": "
+        s = "With scale "+str(self.scale)+" of type "+self.hybridType+": "
         for r in self.reactants:
             s = s+str(r[1])+"*"+r[0].name + " +"
         s = s[:-1]
@@ -65,9 +79,9 @@ class Reaction(Event):
     def updaterate(self):
         """ Update the reaction rate based on the values of species involves. """
 
-        if self.speed == SLOW:
+        if self.hybridType == SLOW:
             self.computerate_slow()
-        elif self.speed == FAST:
+        elif self.hybridType == FAST:
             self.computerate_fast()
 
         return None
@@ -98,9 +112,18 @@ class Reaction(Event):
 
     def react(self):
         """ update species involved in reaction accoding to stoichiometry. """
-
-        for r in self.reactants:
-            r[0].value[self.voxel] = r[0].value[self.voxel]-r[0].scale*float(r[1])
-        for p in self.products:
-            p[0].value[self.voxel] = p[0].value[self.voxel]+p[0].scale*float(p[1])
+        if self.hybridType != NULL:
+            for r in self.reactants:
+                if r[0].scale == self.scale:
+                    r[0].value[self.voxel] = r[0].value[self.voxel]-(1./r[0].scale)*float(r[1])
+            for p in self.products:
+                if p[0].scale == self.scale:
+                    p[0].value[self.voxel] = p[0].value[self.voxel]+(1./p[0].scale)*float(p[1])
+        else:
+            # NULL reactions need special treatment, since they don't alter all
+            # their products and reactants
+            for r in self.reactants:
+                r[0].value[self.voxel] = r[0].value[self.voxel]-(1./r[0].scale)*float(r[1])
+            for p in self.products:
+                p[0].value[self.voxel] = p[0].value[self.voxel]+(1./p[0].scale)*float(p[1])
         return None

@@ -6,7 +6,7 @@ class Species:
 
     def __init__(self,name,scale,mesh,value):
         self.name = name
-        self.scale = scale
+        self.scale = scale # {system size}^{exponent}
         self.mesh = mesh
         self.value = value
 
