@@ -10,12 +10,78 @@ global Nt
 Nt =  10e5
 
 
+# HELPER FUNCTIONS --------------------------------------------------------
 def tryexponential(rate):
     """ Trys to compute exponential. """
     try:
         return np.random.exponential(1./rate)
     except ValueError:
         print("next jump time is at infinity")
+
+def res(x,y):
+    return x - min(x,y)
+
+
+def findreaction_gillespie(events,agg_rate,r):
+    rate_sum = 0.
+    for e in events:
+        rate_sum = rate_sum + e.rate
+        if r<rate_sum/agg_rate:
+            return e
+
+def getstochasticevents(model):
+    stochastic_events = []
+    for e in model.events:
+        if e.hybridType != FAST:
+            stochastic_events.append(e)
+    return stochastic_events
+
+def findreaction(events,agg_rate,r):
+    rate_sum = 0.
+    for e in events:
+        if e.hybridType != FAST:
+            rate_sum = rate_sum +e.rate
+            if r<rate_sum/agg_rate:
+                return e
+
+null = NullEvent()
+def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
+    rate_sum = 0.
+    for i in range(len(events_hybrid)):
+        if events_hybrid[i].hybridType == SLOW:
+            exact_rate = events_exact[i].rate
+            hybrid_rate  = events_hybrid[i].rate
+            rate_sum = rate_sum + res(hybrid_rate,exact_rate)
+            if r<rate_sum/agg_rate:
+                return events_hybrid[i],null
+            rate_sum = rate_sum + res(exact_rate,exact_rate)
+            if r<rate_sum/agg_rate:
+                return null,events_exact[i]
+            rate_sum = rate_sum + min(hybrid_rate,exact_rate)
+            if r<rate_sum/agg_rate:
+                return events_hybrid[i],events_exact[i]
+        elif events_hybrid[i].hybridType == FAST:
+            exact_rate = events_exact[i].rate
+            rate_sum = rate_sum + exact_rate
+            if r<rate_sum/agg_rate:
+                return null,events_exact[i]
+        elif events_hybrid[i].hybridType == NULL:
+            exact_rate = events_exact[i].rate
+            rate_sum = rate_sum + exact_rate
+            if r<rate_sum/agg_rate:
+                return null,events_exact[i]
+            hybrid_rate = events_hybrid[i].rate
+            rate_sum = rate_sum + exact_rate
+            if r<rate_sum/agg_rate:
+                return events_hybrid[i],null
+        #else:
+        #    print("PROBLEM")
+    return null,null
+
+
+
+# Right hand sides --------------------------------------------------------
+
 
 def chvrhs(t,y,model,sample_rate):
     for i in range(model.dimension):
@@ -47,56 +113,6 @@ def chvrhs(t,y,model,sample_rate):
 
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
-
-
-def makepath(model,T,h,method='lsoda',sample_rate = 0.,treatment='hybrid',*args,**kwargs):
-    """ Compute paths of hybrid model using CHV method. """
-    voxel = 0.
-    path = np.zeros((Nt,len(model.systemState)))
-    path[0][:] = model.getstate(0)
-    clock = np.zeros(Nt)
-    if treatment=='exact':
-        for e in model.events:
-            e.hybridType = SLOW
-
-    k = 0
-    tj = ode(chvrhs).set_integrator(method,atol = h,rtol = h)
-    tj.set_f_params(model,sample_rate)
-
-    while (k+1<Nt) and (clock[k]<T):
-        k = k+1
-        s1 = tryexponential(1)
-        # solve
-        y0 = np.append(model.getstate(0),0)
-        tj.set_initial_value(y0,0)
-        tj.integrate(s1)
-        ys1 = tj.y
-
-        for i in range(model.dimension):
-            model.systemState[i].value[0] = ys1[i]
-        t_next = tj.y[model.dimension]
-
-        for e in model.events:
-            e.updaterate()
-        # update slow species
-        r = np.random.rand()
-        stochastic_events = getstochasticevents(model)
-        agg_rate = 0.
-        for e in stochastic_events:
-            agg_rate = agg_rate + e.rate
-        if r>sample_rate/(agg_rate+sample_rate):
-            firing_event = findreaction(model.events,agg_rate,r)
-            firing_event.react()
-        clock[k] = clock[k-1] + t_next
-        path[k][:] = model.getstate(0)
-    return path[0:k+1],clock[0:k+1]
-
-def getstochasticevents(model):
-    stochastic_events = []
-    for e in model.events:
-        if e.hybridType != FAST:
-            stochastic_events.append(e)
-    return stochastic_events
 
 
 
@@ -134,8 +150,77 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
 
-def res(x,y):
-    return x - min(x,y)
+
+# Solvers -----------------------------------------------------------------
+
+def makepath_exact(model,T):
+    """ Compute exact path using Gillespie. """
+    voxel = 0.
+    for e in model.events:
+        e.hybridType = SLOW
+        e.updaterate()
+    path = np.zeros((Nt,len(model.systemState)))
+    path[0][:] = model.getstate(0)
+    clock = np.zeros(Nt)
+    k = 0
+    while (k+1<Nt) and (clock[k]<T):
+        k = k+1
+        for e in model.events:
+            e.updaterate()
+        r = np.random.rand()
+        agg_rate = 0.
+        for e in model.events:
+            agg_rate = agg_rate + e.rate
+        t_next = tryexponential(agg_rate)
+        firing_event = findreaction_gillespie(model.events,agg_rate,r)
+        firing_event.react()
+        clock[k] = clock[k-1] + t_next
+        path[k][:] = model.getstate(0)
+    return path[0:k+1],clock[0:k+1]
+
+
+
+def makepath(model,T,h=None,method='lsoda',sample_rate = 0.,path_type='hybrid',*args,**kwargs):
+    """ Compute paths of model. """
+    if h == None:
+        h = 1./model.systeSize
+    voxel = 0.
+    path = np.zeros((Nt,len(model.systemState)))
+    path[0][:] = model.getstate(0)
+    clock = np.zeros(Nt)
+    if path_type=='exact':
+        return makepath_exact(model,T)
+    # for hybrid paths use chv method
+    k = 0
+    tj = ode(chvrhs).set_integrator(method,atol = h,rtol = h)
+    tj.set_f_params(model,sample_rate)
+    while (k+1<Nt) and (clock[k]<T):
+        k = k+1
+        s1 = tryexponential(1)
+        # solve
+        y0 = np.append(model.getstate(0),0)
+        tj.set_initial_value(y0,0)
+        tj.integrate(s1)
+        ys1 = tj.y
+
+        for i in range(model.dimension):
+            model.systemState[i].value[0] = ys1[i]
+        t_next = tj.y[model.dimension]
+
+        for e in model.events:
+            e.updaterate()
+        # update slow species
+        r = np.random.rand()
+        stochastic_events = getstochasticevents(model)
+        agg_rate = 0.
+        for e in stochastic_events:
+            agg_rate = agg_rate + e.rate
+        if r>sample_rate/(agg_rate+sample_rate):
+            firing_event = findreaction(model.events,agg_rate,r)
+            firing_event.react()
+        clock[k] = clock[k-1] + t_next
+        path[k][:] = model.getstate(0)
+    return path[0:k+1],clock[0:k+1]
 
 
 def makepath_coupled(model_hybrid,T,h,method='lsoda',sample_rate = 0.,*args,**kwargs):
@@ -190,8 +275,9 @@ def makepath_coupled(model_hybrid,T,h,method='lsoda',sample_rate = 0.,*args,**kw
                 agg_rate = agg_rate + res(hybrid_rate,exact_rate )
                 agg_rate = agg_rate + res(exact_rate,hybrid_rate )
                 agg_rate = agg_rate + min(hybrid_rate,exact_rate )
-            elif model_hybrid.events[i].hybridType == FAST:
+            else:
                 agg_rate = agg_rate + model_exact.events[i].rate
+                agg_rate = agg_rate + model_hybrid.events[i].rate
             #else:
             #    print("PROBLEM")
 
@@ -208,36 +294,3 @@ def makepath_coupled(model_hybrid,T,h,method='lsoda',sample_rate = 0.,*args,**kw
         path[k][0:model_hybrid.dimension] = model_hybrid.getstate(0)
         path[k][model_hybrid.dimension:2*model_hybrid.dimension] = model_exact.getstate(0)
     return path[0:k+1],clock[0:k+1]
-
-def findreaction(events,agg_rate,r):
-    rate_sum = 0.
-    for e in events:
-        if e.hybridType != FAST:
-            rate_sum = rate_sum +e.rate
-            if r<rate_sum/agg_rate:
-                return e
-
-null = NullEvent()
-def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
-    rate_sum = 0.
-    for i in range(len(events_hybrid)):
-        if events_hybrid[i].hybridType == SLOW:
-            exact_rate = events_exact[i].rate
-            hybrid_rate  = events_hybrid[i].rate
-            rate_sum = rate_sum + res(hybrid_rate,exact_rate)
-            if r<rate_sum/agg_rate:
-                return events_hybrid[i],null
-            rate_sum = rate_sum + res(exact_rate,exact_rate)
-            if r<rate_sum/agg_rate:
-                return null,events_exact[i]
-            rate_sum = rate_sum + min(hybrid_rate,exact_rate)
-            if r<rate_sum/agg_rate:
-                return events_hybrid[i],events_exact[i]
-        elif events_hybrid[i].hybridType == FAST:
-            exact_rate = events_exact[i].rate
-            rate_sum = rate_sum + exact_rate
-            if r<rate_sum/agg_rate:
-                return null,events_exact[i]
-        #else:
-        #    print("PROBLEM")
-    return null,null

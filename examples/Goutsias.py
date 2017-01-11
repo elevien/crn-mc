@@ -8,9 +8,9 @@ from crn_mc.simulation.montecarlo import *
 
 Nx = 1
 L = 1
-T = 0.05
+T = 1.
 mesh = make_lattice1d(Nx,L)
-systemSize = 100.
+systemSize = 10.
 m = Model(mesh,systemSize)
 
 # from HYE-WON KANG AND THOMAS G. KURTZ 2013
@@ -34,7 +34,7 @@ m.addreaction([["M",2]],[["D",1]],8.30,exponent=1.)
 m.addreaction([["D",1]],[["M",2]],0.55,exponent=1.)
 
 # set initial data
-ic = [1.,1.,0.,50.,0.,0.,0.]
+ic = [1.,1.,0.,2.,0.,0.,0.]
 for i in range(m.dimension):
     m.systemState[i].value[0]= ic[i]
 
@@ -42,15 +42,15 @@ for e in m.events:
     print(e)
 
 
-path_exact,clock_exact = makepath(m,T,pow(systemSize,-2.),sample_rate = 20.,treatment='exact')
+path_exact,clock_exact = makepath(m,T,pow(systemSize,-2.),sample_rate = 1.,path_type='hybrid')
 for i in range(m.dimension):
     m.systemState[i].value[0]= ic[i]
 #path,clock = makepath_coupled(m,T,pow(systemSize,-2.),sample_rate = 10.)
 #plt.plot(clock,path[:,2],'r-')
 #plt.plot(clock,path[:,1+m.dimension],'k-',alpha=0.4)
 
-plt.plot(clock_exact,path_exact[:,3],'k-+')
-plt.plot(clock_exact,path_exact[:,4],'k-+')
+plt.plot(clock_exact,path_exact[:,1],'k-+')
+plt.plot(clock_exact,path_exact[:,4],'r-+')
 #plt.plot(clock_exact,path_exact[:,2],'g--')
 
 # delta = 1.

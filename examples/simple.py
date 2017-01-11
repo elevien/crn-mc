@@ -7,49 +7,37 @@ from crn_mc.simulation.montecarlo import *
 
 
 Nx = 1
-L = 1.
+L = 1
 T = 10.
 mesh = make_lattice1d(Nx,L)
-
-systemSize = 50.
+systemSize = 200.
 m = Model(mesh,systemSize)
-A = m.addspecies("A",1.,[1.])
-B = m.addspecies("B",1.,[0.])
-C = m.addspecies("C",0.,[1.])
-D = m.addspecies("D",0.,[0.])
+
+#
+X1 = m.addspecies("A",exponent=1.)
+X2 = m.addspecies("B",exponent=1.)
+X3 = m.addspecies("C",exponent=0.)
+X4 = m.addspecies("D",exponent=0.)
+
+m.addreaction([["A",1],["C",1]],[["B",1],["C",1]],1.,exponent=1.)
+m.addreaction([["B",1],["D",1]],[["A",1],["D",1]],1.,exponent=1.)
+m.addreaction([["C",1]],[["D",1]],0.3,exponent=0.)
+m.addreaction([["D",1]],[["C",1]],0.3,exponent=0.)
 
 
-r = [["C",1]]
-p = [["B",1],["C",1]]
-m.addreaction(r,p,2.,1.,FAST)
+# set initial data
+ic = [1.,0.,1.,0.]
+for i in range(m.dimension):
+    m.systemState[i].value[0]= ic[i]
 
-r = [["B",1],["D",1]]
-p = [["A",1],["D",1]]
-m.addreaction(r,p,2.,1.,FAST)
+path_exact,clock_exact = makepath(m,T,pow(systemSize,-2.),sample_rate = 1.,path_type='hybrid')
 
-r = [["D",1]]
-p = [["C",1]]
-m.addreaction(r,p,1.,0.,SLOW)
 
-r = [["C",1]]
-p = [["D",1]]
-m.addreaction(r,p,1.,0.,SLOW)
 
-#path,clock = makepath(m,T,pow(systemSize,-2.),'lsoda',1.,0)
+plt.plot(clock_exact,path_exact[:,0],'k-+')
+#plt.plot(clock_exact,path_exact[:,2],'b-+')
+#plt.plot(clock_exact,path_exact[:,2],'g-+')
+#plt.plot(clock_exact,path_exact[:,3],'r-+')
+#plt.plot(clock_exact,path_exact[:,4],'r-+')
 
-delta = 1.5
-Q,err=montecarlo_coupled(m,T,delta,0,0,'lsoda',10.)
-Q2,err2=montecarlo_crude(m,T,delta,0,0,'lsoda',10.)
-print(Q)
-print(Q2)
-plt.plot(err,'k-')
-plt.plot(err2,'r-')
 plt.show()
-#path2,clock2 = makepath_coupled(m,T,pow(systemSize,-2.),'lsoda',1.,0)
-
-#plt.plot(clock,path[:,0],'k-')
-#plt.plot(clock2,path2[:,0],'r-')
-#plt.plot(clock2,path2[:,4],'r--')
-
-#print(path)
-#plt.show()

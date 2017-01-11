@@ -68,11 +68,11 @@ class Reaction(Event):
     def __str__(self):
         s = "With scale "+str(self.scale)+" of type "+self.hybridType+": "
         for r in self.reactants:
-            s = s+str(r[1])+"*"+r[0].name + " +"
+            s = s+str(r[1])+""+r[0].name + " +"
         s = s[:-1]
         s = s + " -> "
         for p in self.products:
-            s = s+str(p[1])+"*"+p[0].name + " +"
+            s = s+str(p[1])+""+p[0].name + " +"
         s = s[:-1]
         return s
 
@@ -94,7 +94,7 @@ class Reaction(Event):
                 base = s[0].value[self.voxel]
                 exp = float(s[1])
                 a = a*pow(base,exp)
-        self.rate = a/self.scale
+        self.rate = a*self.scale
         return None
 
     def computerate_fast(self):
@@ -102,6 +102,7 @@ class Reaction(Event):
 
         # this is the right hand side of the reaction rate equations
         # note that the expression should NOT involve any scales
+        # Is this really needed? Isn't scale =1. for all slow reactions? 
         a = self.intensity
         for s in self.reactants:
             base = s[0].value[self.voxel]
@@ -113,7 +114,7 @@ class Reaction(Event):
     def react(self):
         """ update species involved in reaction accoding to stoichiometry. """
         if self.hybridType == NULL:
-            # NULL reactions need special treatment, since they don't alter all
+            # NULL reactions need special path, since they don't alter all
             # their products and reactants
             for r in self.reactants:
                 if r[0].scale == self.scale:
@@ -122,6 +123,7 @@ class Reaction(Event):
                 if p[0].scale == self.scale:
                     p[0].value[self.voxel] = p[0].value[self.voxel]+(1./p[0].scale)*float(p[1])
         else:
+
             for r in self.reactants:
                 r[0].value[self.voxel] = r[0].value[self.voxel]-(1./r[0].scale)*float(r[1])
             for p in self.products:
