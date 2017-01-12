@@ -6,8 +6,12 @@ from scipy.integrate import ode
 import copy
 
 
+def montecarlo(model,T,delta,method='lsoda',sample_rate =               0.,estimator='crude',path_type='hybrid',*args,**kwargs):
+    voxel = 0.
+    if estimator == 'crude':
+        return montecarlo_crude(model,T,delta,0,voxel,method,sample_rate,path_type)
 
-def montecarlo_crude(model,T,delta,species,voxel,method,sample_rate):
+def montecarlo_crude(model,T,delta,species,voxel,method,sample_rate,path_type):
     """ Obtains statistics of model using a crude monte carlo esimator. """
     samples = []
     standdev = []
@@ -24,7 +28,7 @@ def montecarlo_crude(model,T,delta,species,voxel,method,sample_rate):
 
     # do a fixed number of prelimnary simulations
     for i in range(M0):
-        path,clock= makepath(model,T,h,method,sample_rate,voxel)
+        path,clock= makepath(model,T,h,method=method,sample_rate = sample_rate,path_type=path_type)
         samples = np.append(samples,path[-1,species])
         # reset initial conditions
         for j in range(model.dimension):
@@ -32,7 +36,7 @@ def montecarlo_crude(model,T,delta,species,voxel,method,sample_rate):
     i = 0
     standdev.append(np.std(samples))
     while standdev[i-1]>eps and i<Mmax:
-        path,clock= makepath(model,T,h,method,sample_rate,voxel)
+        path,clock= makepath(model,T,h,method=method,sample_rate = sample_rate,path_type=path_type)
         samples = np.append(samples,path[-1,species])
         # reset initial conditions
         for j in range(model.dimension):

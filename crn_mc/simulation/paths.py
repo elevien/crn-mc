@@ -22,13 +22,6 @@ def res(x,y):
     return x - min(x,y)
 
 
-def findreaction_gillespie(events,agg_rate,r):
-    rate_sum = 0.
-    for e in events:
-        rate_sum = rate_sum + e.rate
-        if r<rate_sum/agg_rate:
-            return e
-
 def getstochasticevents(model):
     stochastic_events = []
     for e in model.events:
@@ -36,7 +29,14 @@ def getstochasticevents(model):
             stochastic_events.append(e)
     return stochastic_events
 
-def findreaction(events,agg_rate,r):
+def findreaction_gillespie(events,agg_rate,r):
+    rate_sum = 0.
+    for e in events:
+        rate_sum = rate_sum + e.rate
+        if r<rate_sum/agg_rate:
+            return e
+
+def findreaction_hybrid(events,agg_rate,r):
     rate_sum = 0.
     for e in events:
         if e.hybridType != FAST:
@@ -151,7 +151,18 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
     return rhs
 
 
-# Solvers -----------------------------------------------------------------
+# path generation ---------------------------------------------------------
+
+def makepath(model,T,h=None,method='lsoda',sample_rate = 0.,path_type = 'hybrid',*args,**kwargs):
+    if h == None:
+        h = 1./model.systeSize
+    if path_type == 'hybrid':
+        return makepath_hybrid(model,T,h,method,sample_rate)
+    elif path_type == 'exact':
+        return makepath_exact(model,T)
+    elif path_type == 'coupled':
+        return makepath_coupled(model,T,h,method,sample_rate)
+
 
 def makepath_exact(model,T):
     """ Compute exact path using Gillespie. """
@@ -180,16 +191,14 @@ def makepath_exact(model,T):
 
 
 
-def makepath(model,T,h=None,method='lsoda',sample_rate = 0.,path_type='hybrid',*args,**kwargs):
+
+def makepath_hybrid(model,T,h,method,sample_rate):
     """ Compute paths of model. """
-    if h == None:
-        h = 1./model.systeSize
     voxel = 0.
     path = np.zeros((Nt,len(model.systemState)))
     path[0][:] = model.getstate(0)
     clock = np.zeros(Nt)
-    if path_type=='exact':
-        return makepath_exact(model,T)
+
     # for hybrid paths use chv method
     k = 0
     tj = ode(chvrhs).set_integrator(method,atol = h,rtol = h)
@@ -216,14 +225,14 @@ def makepath(model,T,h=None,method='lsoda',sample_rate = 0.,path_type='hybrid',*
         for e in stochastic_events:
             agg_rate = agg_rate + e.rate
         if r>sample_rate/(agg_rate+sample_rate):
-            firing_event = findreaction(model.events,agg_rate,r)
+            firing_event = findreaction_hybrid(model.events,agg_rate,r)
             firing_event.react()
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.getstate(0)
     return path[0:k+1],clock[0:k+1]
 
 
-def makepath_coupled(model_hybrid,T,h,method='lsoda',sample_rate = 0.,*args,**kwargs):
+def makepath_coupled(model_hybrid,T,h,method,sample_rate):
     """ Compute paths of coupled exact-hybrid model using CHV method. """
     voxel = 0
     # make copy of model with exact dynamics
