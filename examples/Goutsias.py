@@ -10,7 +10,7 @@ Nx = 1
 L = 1
 T = 1.
 mesh = make_lattice1d(Nx,L)
-systemSize = 100.
+systemSize = 20.
 m = Model(mesh,systemSize)
 
 # from HYE-WON KANG AND THOMAS G. KURTZ 2013
@@ -38,9 +38,16 @@ for i in range(m.dimension):
     m.systemState[i].value[0]= ic[i]
 for e in m.events:
     print(e)
+delta = 2.
+Q2,standdev2 = montecarlo(m,T,delta,method='lsoda',sample_rate = 4.,
+                                    estimator = 'coupled')
+Q1,standdev1 = montecarlo(m,T,delta,method='lsoda',sample_rate = 4.,
+                                    estimator = 'crude',path_type='exact')
 
-
-path_exact,clock_exact = makepath(m,T,pow(systemSize,-2.),sample_rate = 1.,path_type='exact')
-plt.plot(clock_exact,path_exact[:,1],'k-')
-#plt.plot(clock_exact,path_exact[:,7],'b-+')
+plt.plot(standdev1)
+plt.plot(standdev2)
 plt.show()
+print(Q1)
+print(Q2)
+print(standdev1)
+print(standdev2)

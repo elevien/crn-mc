@@ -102,7 +102,7 @@ class Reaction(Event):
 
         # this is the right hand side of the reaction rate equations
         # note that the expression should NOT involve any scales
-        # Is this really needed? Isn't scale =1. for all slow reactions?
+        # todo: add high order terms in rate
         a = self.intensity
         for s in self.reactants:
             base = s[0].value[self.voxel]

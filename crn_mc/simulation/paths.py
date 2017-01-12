@@ -153,7 +153,8 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
 
 # path generation ---------------------------------------------------------
 
-def makepath(model,T,h=None,method='lsoda',sample_rate = 0.,path_type = 'hybrid',*args,**kwargs):
+def makepath(model,T,h = None,method='lsoda',sample_rate = 0.,
+                        path_type = 'hybrid',*args,**kwargs):
     if h == None:
         h = 1./model.systeSize
     if path_type == 'hybrid':
@@ -286,7 +287,7 @@ def makepath_coupled(model_hybrid,T,h,method,sample_rate):
                 agg_rate = agg_rate + min(hybrid_rate,exact_rate )
             else:
                 agg_rate = agg_rate + model_exact.events[i].rate
-                agg_rate = agg_rate + model_hybrid.events[i].rate
+                #agg_rate = agg_rate + model_hybrid.events[i].rate
             #else:
             #    print("PROBLEM")
 
