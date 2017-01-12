@@ -8,11 +8,10 @@ from crn_mc.simulation.montecarlo import *
 
 Nx = 1
 L = 1
-T = 1.
+T = 10.
 mesh = make_lattice1d(Nx,L)
 systemSize = 20.
 m = Model(mesh,systemSize)
-
 # from HYE-WON KANG AND THOMAS G. KURTZ 2013
 X1 = m.addspecies("M",exponent=1.)
 X2 = m.addspecies("D",exponent=1.)
