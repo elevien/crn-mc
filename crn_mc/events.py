@@ -46,12 +46,7 @@ class Reaction(Event):
         self.scale = scale
 
         # determine how to treat the reaction in the thermodynamic limit
-        self.hybridType = 0.
-        if self.scale == 1.:
-            self.hybridType = SLOW
-        else:
-            self.hybridType = FAST
-
+        self.sethybridtype()
         # check if reaction vanishes is thermodynamic limit
 
         # doesn't handle events with \gamma_i  = rho_j = 0 for some (S_0) species
@@ -75,6 +70,15 @@ class Reaction(Event):
             s = s+str(p[1])+""+p[0].name + " +"
         s = s[:-1]
         return s
+
+    def sethybridtype(self):
+        """ Sets the hybrid type based on scales. """
+        self.hybridType = 0.
+        if self.scale == 1.:
+            self.hybridType = SLOW
+        else:
+            self.hybridType = FAST
+        return self.hybridType
 
     def updaterate(self):
         """ Update the reaction rate based on the values of species involves. """

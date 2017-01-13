@@ -166,7 +166,7 @@ def makepath(model,T,h = None,method='lsoda',sample_rate = 0.,
 
 
 def makepath_exact(model,T):
-    """ Compute exact path using Gillespie. """
+    """ Compute exact path using Gillespie algorithm. """
     voxel = 0.
     for e in model.events:
         e.hybridType = SLOW
@@ -189,9 +189,6 @@ def makepath_exact(model,T):
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.getstate(0)
     return path[0:k+1],clock[0:k+1]
-
-
-
 
 def makepath_hybrid(model,T,h,method,sample_rate):
     """ Compute paths of model. """

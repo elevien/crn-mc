@@ -4,13 +4,14 @@ from crn_mc.mesh import *
 from crn_mc.model import *
 from crn_mc.simulation.paths import *
 from crn_mc.simulation.montecarlo import *
+from timer import *
 
 
 Nx = 1
 L = 1
-T = 10.
+T = 100.
 mesh = make_lattice1d(Nx,L)
-systemSize = 20.
+systemSize = 200.
 m = Model(mesh,systemSize)
 # from HYE-WON KANG AND THOMAS G. KURTZ 2013
 X1 = m.addspecies("M",exponent=1.)
@@ -37,16 +38,24 @@ for i in range(m.dimension):
     m.systemState[i].value[0]= ic[i]
 for e in m.events:
     print(e)
-delta = 2.
-Q2,standdev2 = montecarlo(m,T,delta,method='lsoda',sample_rate = 4.,
-                                    estimator = 'coupled')
-Q1,standdev1 = montecarlo(m,T,delta,method='lsoda',sample_rate = 4.,
+delta = 1.1
+print('running coupled monte carlo ...')
+with timer(verbose=False) as t:
+    Q2,standdev2 = montecarlo(m,T,delta,method='lsoda',sample_rate = 4.,
+                                    estimator = 'coupled',path_type='hybrid')
+print("   time    ="+ str(t.secs))
+print("   samples ="+ str(len(standdev2)))
+print('running crude monte carlo ...')
+with timer(verbose=False) as t:
+    Q1,standdev1 = montecarlo(m,T,delta,method='lsoda',sample_rate = 4.,
                                     estimator = 'crude',path_type='exact')
+print("   time    ="+ str(t.secs))
+print("   samples ="+ str(len(standdev1)))
 
-plt.plot(standdev1)
-plt.plot(standdev2)
-plt.show()
-print(Q1)
-print(Q2)
-print(standdev1)
-print(standdev2)
+# plt.plot(standdev1)
+# plt.plot(standdev2)
+# plt.show()
+# print(Q1)
+# print(Q2)
+# print(standdev1)
+# print(standdev2)

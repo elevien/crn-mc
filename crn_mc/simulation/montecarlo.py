@@ -11,7 +11,6 @@ def identity(arg):
 
 def montecarlo(model,T,delta,method='lsoda',sample_rate =0.,estimator='crude',
         path_type='hybrid',func = identity,*args,**kwargs):
-
     voxel = 0.
     if estimator == 'crude':
         return montecarlo_crude(model,T,func,delta,voxel,method,sample_rate,path_type)
@@ -23,6 +22,7 @@ def montecarlo_crude(model,T,func,delta,voxel,method,sample_rate,path_type):
     M0 = 10
     Mmax = 10e5
     samples = np.zeros((Mmax,model.dimension))
+    event_count = 0.
     standdev = np.zeros(Mmax)
     # for storing list new standard deviations
     new_standdevs = np.zeros(model.dimension)
@@ -36,6 +36,7 @@ def montecarlo_crude(model,T,func,delta,voxel,method,sample_rate,path_type):
     while (standdev[i-1]>eps or i<M0) and i<Mmax:
         path,clock= makepath(model,T,h,method=method,sample_rate = sample_rate,
             path_type=path_type)
+        event_count = event_count+len(clock)
         for j in range(model.dimension):
             # evalute f on each species to obtain samples
             samples[i,j] = func(path[-1,j])
@@ -44,13 +45,14 @@ def montecarlo_crude(model,T,func,delta,voxel,method,sample_rate,path_type):
             model.systemState[j].value[0] = ic[j]
         standdev[i] = max(new_standdevs)
         i = i+1
-    return sum(samples/(i+M0)),standdev[1:i]
+    return sum(samples/(i+M0)),standdev[1:i],event_count
 
 def montecarlo_coupled(model,T,func,delta,voxel,method,sample_rate):
     """ Obtains statistics of model using a coupled monte carlo esimator. """
     M0 = 10
     Mmax = 10e5
     samples = np.zeros((Mmax,model.dimension))
+    event_count = 0.
     standdev = np.zeros(Mmax)
     # for storing list new standard deviations
     new_standdevs = np.zeros(model.dimension)
@@ -65,7 +67,7 @@ def montecarlo_coupled(model,T,func,delta,voxel,method,sample_rate):
         path,clock=makepath(model,T,h,method = method,
                     sample_rate = sample_rate,
                     path_type='coupled')
-
+        event_count = event_count+len(clock)
         for j in range(model.dimension):
             # evalute f on each species to obtain samples
             samples[i,j] = path[-1,j]-path[-1,j+model.dimension]
@@ -75,5 +77,5 @@ def montecarlo_coupled(model,T,func,delta,voxel,method,sample_rate):
         standdev[i] = max(new_standdevs)
         i = i+1
     Q1 = sum(samples/i)
-    Q2,standdev2 = montecarlo_crude(model,T,func,delta,voxel,method,sample_rate,'hybrid')
-    return Q1+Q2,standdev[1:i]
+    Q2,standdev2,event_count2 = montecarlo_crude(model,T,func,delta,voxel,method,sample_rate,'hybrid')
+    return Q1+Q2,standdev[1:i],event_count+event_count2
