@@ -37,21 +37,19 @@ ic = [1.,1.,0.,2.,0.,0.,0.]
 for i in range(m.dimension):
     m.systemState[i].value[0]= ic[i]
 delta = 0.8
+
+info_file = open("mc_info.txt","w")
 with timer(verbose=False) as t:
     Q2,standdev2,event_count2 = montecarlo(m,T,delta,ode_method='lsoda',sample_rate = 4.,
-                                    estimator = 'coupled',path_type='hybrid')
+                                    estimator = 'coupled',path_type='hybrid',output=info_file)
 
 with timer(verbose=False) as t:
     Q1,standdev1,event_count1 = montecarlo(m,T,delta,ode_method='lsoda',sample_rate = 4.,
-                                    estimator = 'crude',path_type='exact')
+                                    estimator = 'crude',path_type='exact',output=info_file )
 
 
 plt.plot(standdev1,'k-')
 plt.plot(standdev2,'g-')
-print(Q1)
-print(Q2)
-print(standdev1)
-print(standdev2)
 plt.show()
 # plt.plot(standdev1)
 # plt.plot(standdev2)
