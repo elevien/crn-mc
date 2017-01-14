@@ -153,16 +153,16 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
 
 # path generation ---------------------------------------------------------
 
-def makepath(model,T,h = None,method='lsoda',sample_rate = 0.,
+def makepath(model,T,h = None,ode_method='lsoda',sample_rate = 0.,
                         path_type = 'hybrid',*args,**kwargs):
     if h == None:
         h = 1./model.systeSize
     if path_type == 'hybrid':
-        return makepath_hybrid(model,T,h,method,sample_rate)
+        return makepath_hybrid(model,T,h,ode_method,sample_rate)
     elif path_type == 'exact':
         return makepath_exact(model,T)
     elif path_type == 'coupled':
-        return makepath_coupled(model,T,h,method,sample_rate)
+        return makepath_coupled(model,T,h,ode_method,sample_rate)
 
 
 def makepath_exact(model,T):
@@ -190,16 +190,16 @@ def makepath_exact(model,T):
         path[k][:] = model.getstate(0)
     return path[0:k+1],clock[0:k+1]
 
-def makepath_hybrid(model,T,h,method,sample_rate):
+def makepath_hybrid(model,T,h,ode_method,sample_rate):
     """ Compute paths of model. """
     voxel = 0.
     path = np.zeros((Nt,len(model.systemState)))
     path[0][:] = model.getstate(0)
     clock = np.zeros(Nt)
 
-    # for hybrid paths use chv method
+    # for hybrid paths use chv ode_method
     k = 0
-    tj = ode(chvrhs).set_integrator(method,atol = h,rtol = h)
+    tj = ode(chvrhs).set_integrator(ode_method,atol = h,rtol = h)
     tj.set_f_params(model,sample_rate)
     while (k+1<Nt) and (clock[k]<T):
         k = k+1
@@ -230,8 +230,8 @@ def makepath_hybrid(model,T,h,method,sample_rate):
     return path[0:k+1],clock[0:k+1]
 
 
-def makepath_coupled(model_hybrid,T,h,method,sample_rate):
-    """ Compute paths of coupled exact-hybrid model using CHV method. """
+def makepath_coupled(model_hybrid,T,h,ode_method,sample_rate):
+    """ Compute paths of coupled exact-hybrid model using CHV ode_method. """
     voxel = 0
     # make copy of model with exact dynamics
     model_exact = copy.deepcopy(model_hybrid)
@@ -245,7 +245,7 @@ def makepath_coupled(model_hybrid,T,h,method,sample_rate):
     clock = np.zeros(Nt)
 
     k = 0
-    tj = ode(chvrhs_coupled).set_integrator(method,atol = h,rtol = h)
+    tj = ode(chvrhs_coupled).set_integrator(ode_method,atol = h,rtol = h)
     tj.set_f_params(model_hybrid,model_exact,sample_rate)
     y0 = np.zeros(2*model_hybrid.dimension+1)
 

@@ -89,13 +89,13 @@ def chvRHS(t,y,m,sample_rate):
     return rhs
 
 
-def chv(model,T,h,method,sample_rate):
+def chv(model,T,h,ode_method,sample_rate):
     print('here')
     path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.systemState
     k = 0
-    tj = ode(chvRHS).set_integrator(method,atol = h,rtol = h)
+    tj = ode(chvRHS).set_integrator(ode_method,atol = h,rtol = h)
     tj.set_f_params(model,sample_rate)
 
     while (k+1<Nt) and (clock[k]<T):
@@ -126,7 +126,7 @@ def chv(model,T,h,method,sample_rate):
         path[k][:] = model.systemState
 
     # now find the value of the continous part at exactly T
-    rre = ode(rre_f).set_integrator(method,atol = h,rtol = h)
+    rre = ode(rre_f).set_integrator(ode_method,atol = h,rtol = h)
     rre.set_f_params(model)
     rre.set_initial_value(path[k-1][:].reshape(model.ss_d1*model.ss_d2,),0)
     s1 = T-clock[k-1]
@@ -138,13 +138,13 @@ def chv(model,T,h,method,sample_rate):
     return path[0:k+1],clock[0:k+1]
 
 
-def strang_split(model,T,h0,h,method):
+def strang_split(model,T,h0,h,ode_method):
     clock = np.arange(0,T,h0)
     path = np.zeros((len(clock),len(model.systemState),model.mesh.Nvoxels))
     path[0,:] = model.systemState
 
     # setup ODE integrator
-    rre = ode(rre_f).set_integrator(method,atol = h,rtol = h)
+    rre = ode(rre_f).set_integrator(ode_method,atol = h,rtol = h)
     rre.set_f_params(model)
 
     for k in range(len(clock)):
@@ -199,12 +199,12 @@ def strang_split(model,T,h0,h,method):
         path[k][:] = model.systemState
     return path,clock
 
-def gillespie_hybrid(model,T,h1,h2,method):
+def gillespie_hybrid(model,T,h1,h2,ode_method):
     path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
     clock = np.zeros(Nt)
     path[0,:] = model.systemState
     k = 1
-    rre = ode(rre_f).set_integrator(method,atol = h1,rtol = h1)
+    rre = ode(rre_f).set_integrator(ode_method,atol = h1,rtol = h1)
     rre.set_f_params(model)
     while (k<Nt) and (clock[k-1]<T):
         # compute aggregate rate
