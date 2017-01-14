@@ -39,13 +39,10 @@ for i in range(m.dimension):
 delta = 0.8
 
 info_file = open("mc_info.txt","w")
-with timer(verbose=False) as t:
-    Q2,standdev2,event_count2 = montecarlo(m,T,delta,ode_method='lsoda',sample_rate = 4.,
-                                    estimator = 'coupled',path_type='hybrid',output=info_file)
-
-with timer(verbose=False) as t:
-    Q1,standdev1,event_count1 = montecarlo(m,T,delta,ode_method='lsoda',sample_rate = 4.,
-                                    estimator = 'crude',path_type='exact',output=info_file )
+Q2,standdev2,event_count2 = montecarlo(m,T,delta,ode_method='lsoda',sample_rate = 4.,
+                                    estimator = 'coupled',path_type='hybrid',info_file=info_file)
+Q1,standdev1,event_count1 = montecarlo(m,T,delta,ode_method='lsoda',sample_rate = 4.,
+                                    estimator = 'crude',path_type='exact',info_file=info_file )
 
 
 plt.plot(standdev1,'k-')
