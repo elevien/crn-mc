@@ -40,7 +40,7 @@ def montecarlo(model,initial_data,T,delta,ode_method='lsoda',sample_rate =0.,est
     }
 
     results_dict = {
-        'estimate':list(estimate),
+        'estimate':{model.systemState[i].name:estimate[i] for i in range(model.dimension)},
         'event_count':event_count,
         'standdev':list(standdev)
     }
