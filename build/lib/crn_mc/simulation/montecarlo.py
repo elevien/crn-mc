@@ -1,78 +1,143 @@
 from ..mesh import *
 from ..model import *
 from .paths import *
+import sys
 import numpy as np
 from scipy.integrate import ode
 import copy
 
 
+def identity(arg):
+    return arg
 
-def mc_crude(model,T,Np,delta):
-    Q = 0
-    eps = pow(Np,-delta)
-    Nruns = int(pow(eps,-2))
-    for k in range(Nruns):
-        path,clock= gillespie(model,T)
-        Q = Q+path[-1,0]
-    Q = Q/float(Nruns)
-    return Q
+def montecarlo(model,T,delta,ode_method='lsoda',sample_rate =0.,estimator='crude',
+        path_type='hybrid',func = identity,min_samples=10,max_samples=10e5,
+        output_file=sys.stdout,*args,**kwargs):
+    voxel = 0.
 
-def mc_hyrbidCoupled(model_coupled,model_hybrid,T,Np,delta,sample_rate):
-    eps = pow(Np,-delta)
+    print('######################################################',file=output_file)
+    print('                 running monte carlo                  ',file=output_file)
+    print('######################################################',file=output_file)
+    print('',file=output_file)
+    print('params ',file=output_file)
+    print('------------------------------------------------------',file=output_file)
+    print(' estimator   =',estimator,file=output_file)
+    print(' sample_rate =',str(sample_rate),file=output_file)
+    print(' ode_method  =',ode_method,file=output_file)
+    print(' T           =',str(T),file=output_file)
+    print(' delta       =',str(delta),file=output_file)
+    print(' max_samples =',str(max_samples),file=output_file)
+    print(' min_samples =',str(min_samples),file=output_file)
+    print('',file=output_file)
+
+    if estimator == 'crude':
+        estimate,standdev,event_count= montecarlo_crude(model,T,func,delta,voxel,ode_method,
+            sample_rate,path_type,min_samples,max_samples,output_file)
+    elif estimator == 'coupled':
+        estimate,standdev,event_count=  montecarlo_coupled(model,T,func,delta,voxel,ode_method,
+            sample_rate,min_samples,max_samples,output_file)
+
+    print('results',file=output_file)
+    print('------------------------------------------------------',file=output_file)
+    print(' estimate     = '+str(estimate),file=output_file)
+    print(' event_count  = '+str(event_count),file=output_file)
+    print('',file=output_file)
+    return estimate,standdev,event_count
+
+def montecarlo_crude(model,T,func,delta,voxel,ode_method,sample_rate,path_type,
+        min_samples,max_samples,output_file):
+    """ Obtains statistics of model using a crude monte carlo esimator. """
+    M0 = 10
+    Mmax = 10e5
+    samples = np.zeros((Mmax,model.dimension))
+    event_count = 0.
+    standdev = np.zeros(Mmax)
+    # for storing list new standard deviations
+    new_standdevs = np.zeros(model.dimension)
+    eps = pow(model.systemSize,-delta)
     h = eps
-    Nruns_coupled = int(pow(eps,1/(2*delta)-2))
-    Nruns_hybrid = int(pow(eps,-2))
-    Q_coupled = 0
-    Q_hybrid = 0
-    for k in range(Nruns_coupled):
-        path,clock = chv(model_coupled,T,eps,'lsoda',sample_rate)
-        Q_coupled = Q_coupled-(path[-1,0]-path[-1,model_coupled.dimension])
-    Q_coupled = Q_coupled/float(Nruns_coupled)
+    # get the intial conditions
+    ic = np.zeros(model.dimension)
+    for j in range(model.dimension):
+        ic[j] = model.systemState[j].value[0]
+    i = 0.
 
-    #for k in range(Nruns_hybrid):
-    #    path,clock = chv(model_hybrid,T,eps,'lsoda',sample_rate)
-    #    Q_hybrid = Q_hybrid+path[-1,0]
-    #Q_hybrid = Q_hybrid/float(Nruns_hybrid)
-    return Q_coupled #+Q_hybrid
+    print('model setup ',file=output_file)
+    print('------------------------------------------------------',file=output_file)
+    print(' system size = '+str(model.systemSize),file=output_file)
+    print(' eps         = '+str(eps),file=output_file)
+    print(' events:',file=output_file)
+    for e in model.events:
+        print(' '+e.__str__(),file=output_file)
+    print('',file=output_file)
 
-def mc_crudeDiffusions(model,T,eps,delta):
+    print('generating samples...',file=output_file)
+    while (standdev[i-1]>eps or i<M0) and i<Mmax:
+        path,clock= makepath(model,T,h,ode_method=ode_method,sample_rate = sample_rate,
+            path_type=path_type)
+        event_count = event_count+len(clock)
+        for j in range(model.dimension):
+            # evalute f on each species to obtain samples
+            samples[i,j] = func(path[-1,j])
+            new_standdevs[j] = np.std(samples[:,j]/i)
+            # reset initial conditions
+            model.systemState[j].value[0] = ic[j]
+        standdev[i] = max(new_standdevs)
+        i = i+1
+    if standdev[i-1]>eps:
+        print(' estimator failed to converge',file=output_file)
+    else:
+        print(' success!',file=output_file)
+    print(' ',file=output_file)
+    return sum(samples/(i+M0)),standdev[1:i],event_count
 
-    clock_quantized = np.linspace(0,T,resolution)
-    Nt  = len(clock_quantized)
-    average_quantized = np.zeros((len(model.systemState),model.mesh.Nvoxels))
+def montecarlo_coupled(model,T,func,delta,voxel,ode_method,sample_rate,
+        min_samples,max_samples,output_file):
+    """ Obtains statistics of model using a coupled monte carlo esimator. """
+    M0 = 10
+    Mmax = 10e5
+    samples = np.zeros((Mmax,model.dimension))
+    event_count = 0.
+    standdev = np.zeros(Mmax)
+    # for storing list new standard deviations
+    new_standdevs = np.zeros(model.dimension)
+    eps = pow(model.systemSize,-delta)
+    h = eps
+    # get the intial conditions
+    ic = np.zeros(model.dimension)
+    for j in range(model.dimension):
+        ic[j] = model.systemState[j].value[0]
+    i = 0.
 
-    for i in range(Nruns):
-        print("run "+str(i)+"/"+str(Nruns))
-        model.syste_state = initial_conditions
-        path,clock = gillespie(model,T)
-        average_quantized = average_quantized + path[-1]
+    print('model setup ',file=output_file)
+    print('------------------------------------------------------',file=output_file)
+    print(' system size = '+str(model.systemSize),file=output_file)
+    print(' eps         = '+str(eps),file=output_file)
+    print(' events:',file=output_file)
+    for e in model.events:
+        print(' '+e.__str__(),file=output_file)
+    print('',file=output_file)
 
-    average_quantized = average_quantized/Nruns
-
-    return average_quantized
-
-def mc_splitCoupledDiffusions(models,initial_conditions,T,runs,resolution):
-
-    level = len(models)
-    clock_quantized = np.linspace(0,T,resolution)
-    Nt  = len(clock_quantized)
-    path_quantized = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
-
-    for i in range(levels):
-        for j in range(runs[i]):
-            path_average_o,clock_o = mc_crude(model,Nruns,resolution)
-            path_average = path_average + path_average_o
-            path_clock = path_clock + path_clock_o
-
-    return path_quantized,clock_quantized
-
-def quantize_path(path,clock,clock_quantized):
-    path_quantized = np.zeros((len(clock_quantized),len(path[0,:,0]),len(path[0,0])))
-    path_quantized[0] = path[0]
-    i = 1.
-    for k in range(len(clock_quantized)):
-        while clock[i] < clock_quantized[k] and i+1<len(clock):
-            path_quantized[k] = path[i]
-            i = i+1
-
-    return path_quantized
+    print('generating samples...',file=output_file)
+    while (standdev[i-1]>eps or i<M0) and i<Mmax:
+        path,clock=makepath(model,T,h,ode_method = ode_method,
+                    sample_rate = sample_rate,
+                    path_type='coupled')
+        event_count = event_count+len(clock)
+        for j in range(model.dimension):
+            # evalute f on each species to obtain samples
+            samples[i,j] = func(path[-1,j])-func(path[-1,j+model.dimension])
+            new_standdevs[j] = np.std(samples[:,j]/i)
+            # reset initial conditions (remember this model is copied)
+            model.systemState[j].value[0] = ic[j]
+        standdev[i] = max(new_standdevs)
+        i = i+1
+    if standdev[i-1]>eps:
+        print(' estimator failed to converge',file=output_file)
+    else:
+        print(' success!',file=output_file)
+    print(' ',file=output_file)
+    Q1 = sum(samples/i)
+    Q2,standdev2,event_count2 = montecarlo_crude(model,T,func,delta,voxel,ode_method,
+            sample_rate,'hybrid',min_samples,max_samples,output_file)
+    return Q1+Q2,standdev[1:i],event_count+event_count2

@@ -1,0 +1,45 @@
+running install
+running bdist_egg
+running egg_info
+writing top-level names to crn_mc.egg-info/top_level.txt
+writing dependency_links to crn_mc.egg-info/dependency_links.txt
+writing crn_mc.egg-info/PKG-INFO
+reading manifest file 'crn_mc.egg-info/SOURCES.txt'
+writing manifest file 'crn_mc.egg-info/SOURCES.txt'
+installing library code to build/bdist.macosx-10.6-x86_64/egg
+running install_lib
+running build_py
+creating build/bdist.macosx-10.6-x86_64/egg
+creating build/bdist.macosx-10.6-x86_64/egg/crn_mc
+copying build/lib/crn_mc/__init__.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc
+copying build/lib/crn_mc/events.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc
+copying build/lib/crn_mc/mesh.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc
+copying build/lib/crn_mc/model.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc
+creating build/bdist.macosx-10.6-x86_64/egg/crn_mc/simulation
+copying build/lib/crn_mc/simulation/__init__.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc/simulation
+copying build/lib/crn_mc/simulation/montecarlo.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc/simulation
+copying build/lib/crn_mc/simulation/paths.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc/simulation
+copying build/lib/crn_mc/species.py -> build/bdist.macosx-10.6-x86_64/egg/crn_mc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/__init__.py to __init__.cpython-35.pyc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/events.py to events.cpython-35.pyc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/mesh.py to mesh.cpython-35.pyc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/model.py to model.cpython-35.pyc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/simulation/__init__.py to __init__.cpython-35.pyc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/simulation/montecarlo.py to montecarlo.cpython-35.pyc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/simulation/paths.py to paths.cpython-35.pyc
+byte-compiling build/bdist.macosx-10.6-x86_64/egg/crn_mc/species.py to species.cpython-35.pyc
+creating build/bdist.macosx-10.6-x86_64/egg/EGG-INFO
+copying crn_mc.egg-info/PKG-INFO -> build/bdist.macosx-10.6-x86_64/egg/EGG-INFO
+copying crn_mc.egg-info/SOURCES.txt -> build/bdist.macosx-10.6-x86_64/egg/EGG-INFO
+copying crn_mc.egg-info/dependency_links.txt -> build/bdist.macosx-10.6-x86_64/egg/EGG-INFO
+copying crn_mc.egg-info/top_level.txt -> build/bdist.macosx-10.6-x86_64/egg/EGG-INFO
+creating 'dist/crn_mc-1.0-py3.5.egg' and adding 'build/bdist.macosx-10.6-x86_64/egg' to it
+removing 'build/bdist.macosx-10.6-x86_64/egg' (and everything under it)
+Processing crn_mc-1.0-py3.5.egg
+Removing /anaconda/lib/python3.5/site-packages/crn_mc-1.0-py3.5.egg
+Copying crn_mc-1.0-py3.5.egg to /anaconda/lib/python3.5/site-packages
+crn-mc 1.0 is already the active version in easy-install.pth
+
+Installed /anaconda/lib/python3.5/site-packages/crn_mc-1.0-py3.5.egg
+Processing dependencies for crn-mc==1.0
+Finished processing dependencies for crn-mc==1.0

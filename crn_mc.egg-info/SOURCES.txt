@@ -1,7 +1,9 @@
 setup.py
 crn_mc/__init__.py
+crn_mc/events.py
 crn_mc/mesh.py
 crn_mc/model.py
+crn_mc/species.py
 crn_mc.egg-info/PKG-INFO
 crn_mc.egg-info/SOURCES.txt
 crn_mc.egg-info/dependency_links.txt

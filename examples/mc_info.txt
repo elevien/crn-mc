@@ -50,7 +50,7 @@ model setup
 generating samples...
  success!
  
-info_file
+output_file
 ------------------------------------------------------
  estimate     = [ 0.16729311  0.34635344  0.         -0.6         1.8        -0.2         0.        ]
  event_count  = 5441.0
@@ -88,7 +88,7 @@ model setup
 generating samples...
  success!
  
-info_file
+output_file
 ------------------------------------------------------
  estimate     = [ 0.105  0.58   0.25   0.1    0.65   0.25   0.05 ]
  event_count  = 288.0

@@ -196,6 +196,9 @@ def makepath_hybrid(model,T,h,ode_method,sample_rate):
     path = np.zeros((Nt,len(model.systemState)))
     path[0][:] = model.getstate(0)
     clock = np.zeros(Nt)
+    for e in model.events:
+        e.sethybridtype()
+        e.updaterate()
 
     # for hybrid paths use chv ode_method
     k = 0
@@ -235,8 +238,12 @@ def makepath_coupled(model_hybrid,T,h,ode_method,sample_rate):
     voxel = 0
     # make copy of model with exact dynamics
     model_exact = copy.deepcopy(model_hybrid)
+    for e in model_hybrid.events:
+        e.sethybridtype()
+        e.updaterate()
     for e in model_exact.events:
         e.hybridType = SLOW
+        e.updaterate()
 
     # setup integrator
     path = np.zeros((Nt,2*model_hybrid.dimension))

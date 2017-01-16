@@ -1,257 +1,303 @@
 from ..mesh import *
 from ..model import *
+import inspect
 import numpy as np
 from scipy.integrate import ode
 import copy
 
 
 global Nt
-Nt =  500000.
+Nt =  10e5
 
 
-def next_reaction(model,T):
-    path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
-    clock = np.zeros(Nt)
-    path[0,:] = model.systemState
-    k = 1
-    while (k<Nt) and (clock[k-1]<T):
-        firing_event = min(model.events, key=lambda e: e.wait_absolute)
-        badrate = firing_event.wait_absolute
-        m = model.events.index(firing_event)
-        delta = firing_event.wait_absolute
-        direction = firing_event.direction
+# HELPER FUNCTIONS --------------------------------------------------------
+def tryexponential(rate):
+    """ Trys to compute exponential. """
+    try:
+        return np.random.exponential(1./rate)
+    except ValueError:
+        print("next jump time is at infinity")
 
-        # update system
-        clock[k] = clock[k-1]+delta
-        model.systemState =  model.systemState + direction
+def res(x,y):
+    return x - min(x,y)
 
-        # fire events
-        firing_event.fire(delta)
-        model.events.pop(m)
-        for e in model.events:
-            e.no_fire(delta)
-        model.events.append(firing_event)
-        if len(model.systemState[model.systemState  <0]) >0:  ## DB
-            print("Warning: negative species count from event = " + str(firing_event))  ## DB
-            break;
-        path[k][:] = model.systemState
-        k = k+1
-    return path[0:k-1],clock[0:k-1]
 
-def gillespie(model,T):
-    path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
-    clock = np.zeros(Nt)
-    path[0,:] = model.systemState
-    k = 1
-    while (k<Nt) and (clock[k-1]<T):
-        # compute aggregate rate
-        agg_rate = sum((e.rate for e in model.events))
-        delta = exponential0(agg_rate)
+def getstochasticevents(model):
+    stochastic_events = []
+    for e in model.events:
+        if e.hybridType != FAST:
+            stochastic_events.append(e)
+    return stochastic_events
 
-        # find next reaction
-        r =  np.random.rand()
-        firing_event = find_reaction(model.events,agg_rate,r)
-        direction = firing_event.direction
-        # update system state
-        clock[k] = clock[k-1]+delta
-        model.systemState =  model.systemState + direction
-        path[k][:] = model.systemState
+def findreaction_gillespie(events,agg_rate,r):
+    rate_sum = 0.
+    for e in events:
+        rate_sum = rate_sum + e.rate
+        if r<rate_sum/agg_rate:
+            return e
 
-        # update rates
-        for e in model.events:
-            e.updaterate()
-        k = k+1
-    #print("k = "+str(k))
-    return path[0:k-1],clock[0:k-1]
+def findreaction_hybrid(events,agg_rate,r):
+    rate_sum = 0.
+    for e in events:
+        if e.hybridType != FAST:
+            rate_sum = rate_sum +e.rate
+            if r<rate_sum/agg_rate:
+                return e
 
-def rre_f(t,y,m):
-    # make copy of model
-    m.systemState = y.reshape(m.ss_d1,m.mesh.Nvoxels)
-    for e in m.eventsFast:
+null = NullEvent()
+def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
+    rate_sum = 0.
+    for i in range(len(events_hybrid)):
+        if events_hybrid[i].hybridType == SLOW:
+            exact_rate = events_exact[i].rate
+            hybrid_rate  = events_hybrid[i].rate
+            rate_sum = rate_sum + res(hybrid_rate,exact_rate)
+            if r<rate_sum/agg_rate:
+                return events_hybrid[i],null
+            rate_sum = rate_sum + res(exact_rate,exact_rate)
+            if r<rate_sum/agg_rate:
+                return null,events_exact[i]
+            rate_sum = rate_sum + min(hybrid_rate,exact_rate)
+            if r<rate_sum/agg_rate:
+                return events_hybrid[i],events_exact[i]
+        elif events_hybrid[i].hybridType == FAST:
+            exact_rate = events_exact[i].rate
+            rate_sum = rate_sum + exact_rate
+            if r<rate_sum/agg_rate:
+                return null,events_exact[i]
+        elif events_hybrid[i].hybridType == NULL:
+            exact_rate = events_exact[i].rate
+            rate_sum = rate_sum + exact_rate
+            if r<rate_sum/agg_rate:
+                return null,events_exact[i]
+            hybrid_rate = events_hybrid[i].rate
+            rate_sum = rate_sum + exact_rate
+            if r<rate_sum/agg_rate:
+                return events_hybrid[i],null
+        #else:
+        #    print("PROBLEM")
+    return null,null
+
+
+
+# Right hand sides --------------------------------------------------------
+
+
+def chvrhs(t,y,model,sample_rate):
+    for i in range(model.dimension):
+        model.systemState[i].value[0] = y[i]
+    for e in model.events:
         e.updaterate()
-    rates = np.zeros(len(m.systemState))
-    for e in m.eventsFast:
-        rates = rates + e.direction[:,0].reshape(len(m.systemState),)*e.rate
-    #print(rates.tolist())
-    return rates
+    slow = filter(lambda e: e.hybridType == SLOW, model.events)
+    null = filter(lambda e: e.hybridType == NULL, model.events)
+    agg_rate = 0.
+    for s in slow:
+        agg_rate = agg_rate + s.rate
+    for s in null:
+        agg_rate = agg_rate + s.rate
 
-def chvRHS(t,y,m,sample_rate):
-    m.systemState = y[0:len(m.systemState)].reshape(m.ss_d1,m.mesh.Nvoxels)
-    for e in m.eventsFast:
-        e.updaterate()
-    agg_rate = sum((e.rate for e in m.eventsSlow))+sample_rate
-    rhs = np.zeros(len(m.systemState)+1)
-    for e in m.eventsFast:
-        rhs[0:len(m.systemState)] = rhs[0:len(m.systemState)]\
-         + e.direction[:,0].reshape(len(m.systemState),)*e.rate
-    rhs[len(m.systemState)] = 1.
-    rhs = rhs/agg_rate
+    rhs = np.zeros(model.dimension+1)
+    fast = filter(lambda e: e.hybridType == FAST, model.events)
+    for e in fast:
+        for i in range(model.dimension):
+            name = model.systemState[i].name
+            r = list(filter(lambda e: e[0].name == name, e.reactants))
+            p = list(filter(lambda e: e[0].name == name, e.products))
+            direction = 0.
+            if r:
+                direction = direction - float(r[0][1])
+            if p:
+                direction = direction + float(p[0][1])
+            rhs[i] = rhs[i]+ direction*e.rate
+    rhs[len(model.systemState)] = 1.
+
+    rhs = rhs/(agg_rate+sample_rate)
     return rhs
 
 
-def chv(model,T,h,ode_method,sample_rate):
-    print('here')
-    path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
-    clock = np.zeros(Nt)
-    path[0,:] = model.systemState
-    k = 0
-    tj = ode(chvRHS).set_integrator(ode_method,atol = h,rtol = h)
-    tj.set_f_params(model,sample_rate)
 
+def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
+    for i in range(model_exact.dimension):
+        model_hybrid.systemState[i].value[0] = y[i]
+    for i in range(model_hybrid.dimension):
+        model_exact.systemState[i].value[0] = y[i+model_exact.dimension]
+    for e in model_exact.events:
+        e.updaterate()
+    for e in model_hybrid.events:
+        e.updaterate()
+    agg_rate = 0.
+    for i in range(len(model_exact.events)):
+        rate_hybrid = model_hybrid.events[i].rate
+        rate_exact = model_exact.events[i].rate
+        agg_rate = agg_rate + rate_hybrid + rate_exact - min(rate_hybrid,rate_exact)
+
+    rhs = np.zeros(2*model_exact.dimension+1)
+    fast = filter(lambda e: e.hybridType == FAST, model_hybrid.events)
+
+    for e in fast:
+        for i in range(model_exact.dimension):
+            name = model_exact.systemState[i].name
+            r = list(filter(lambda e: e[0].name == name, e.reactants))
+            p = list(filter(lambda e: e[0].name == name, e.products))
+            direction = 0.
+            if r:
+                direction = direction - float(r[0][1])
+            if p:
+                direction = direction + float(p[0][1])
+            rhs[i] = rhs[i] + direction*e.rate
+    rhs[2*model_exact.dimension] = 1.
+
+    rhs = rhs/(agg_rate+sample_rate)
+    return rhs
+
+
+# path generation ---------------------------------------------------------
+
+def makepath(model,T,h = None,ode_method='lsoda',sample_rate = 0.,
+                        path_type = 'hybrid',*args,**kwargs):
+    if h == None:
+        h = 1./model.systeSize
+    if path_type == 'hybrid':
+        return makepath_hybrid(model,T,h,ode_method,sample_rate)
+    elif path_type == 'exact':
+        return makepath_exact(model,T)
+    elif path_type == 'coupled':
+        return makepath_coupled(model,T,h,ode_method,sample_rate)
+
+
+def makepath_exact(model,T):
+    """ Compute exact path using Gillespie algorithm. """
+    voxel = 0.
+    for e in model.events:
+        e.hybridType = SLOW
+        e.updaterate()
+    path = np.zeros((Nt,len(model.systemState)))
+    path[0][:] = model.getstate(0)
+    clock = np.zeros(Nt)
+    k = 0
     while (k+1<Nt) and (clock[k]<T):
         k = k+1
-        s1 = exponential0(1)
+        for e in model.events:
+            e.updaterate()
+        r = np.random.rand()
+        agg_rate = 0.
+        for e in model.events:
+            agg_rate = agg_rate + e.rate
+        t_next = tryexponential(agg_rate)
+        firing_event = findreaction_gillespie(model.events,agg_rate,r)
+        firing_event.react()
+        clock[k] = clock[k-1] + t_next
+        path[k][:] = model.getstate(0)
+    return path[0:k+1],clock[0:k+1]
+
+def makepath_hybrid(model,T,h,ode_method,sample_rate):
+    """ Compute paths of model. """
+    voxel = 0.
+    path = np.zeros((Nt,len(model.systemState)))
+    path[0][:] = model.getstate(0)
+    clock = np.zeros(Nt)
+
+    # for hybrid paths use chv ode_method
+    k = 0
+    tj = ode(chvrhs).set_integrator(ode_method,atol = h,rtol = h)
+    tj.set_f_params(model,sample_rate)
+    while (k+1<Nt) and (clock[k]<T):
+        k = k+1
+        s1 = tryexponential(1)
         # solve
-        y0 = np.append(model.systemState.reshape(model.ss_d1*model.ss_d2,),0)
+        y0 = np.append(model.getstate(0),0)
         tj.set_initial_value(y0,0)
         tj.integrate(s1)
         ys1 = tj.y
 
-        model.systemState = ys1[0:len(model.systemState)].reshape(model.ss_d1,model.mesh.Nvoxels)
-        t_next = tj.y[len(model.systemState)]
+        for i in range(model.dimension):
+            model.systemState[i].value[0] = ys1[i]
+        t_next = tj.y[model.dimension]
 
-        for e in model.eventsSlow:
+        for e in model.events:
             e.updaterate()
-        for e in model.eventsFast:
+        # update slow species
+        r = np.random.rand()
+        stochastic_events = getstochasticevents(model)
+        agg_rate = 0.
+        for e in stochastic_events:
+            agg_rate = agg_rate + e.rate
+        if r>sample_rate/(agg_rate+sample_rate):
+            firing_event = findreaction_hybrid(model.events,agg_rate,r)
+            firing_event.react()
+        clock[k] = clock[k-1] + t_next
+        path[k][:] = model.getstate(0)
+    return path[0:k+1],clock[0:k+1]
+
+
+def makepath_coupled(model_hybrid,T,h,ode_method,sample_rate):
+    """ Compute paths of coupled exact-hybrid model using CHV ode_method. """
+    voxel = 0
+    # make copy of model with exact dynamics
+    model_exact = copy.deepcopy(model_hybrid)
+    for e in model_exact.events:
+        e.hybridType = SLOW
+
+    # setup integrator
+    path = np.zeros((Nt,2*model_hybrid.dimension))
+    path[0][0:model_hybrid.dimension] = model_hybrid.getstate(0)
+    path[0][model_hybrid.dimension:2*model_hybrid.dimension] = model_exact.getstate(0)
+    clock = np.zeros(Nt)
+
+    k = 0
+    tj = ode(chvrhs_coupled).set_integrator(ode_method,atol = h,rtol = h)
+    tj.set_f_params(model_hybrid,model_exact,sample_rate)
+    y0 = np.zeros(2*model_hybrid.dimension+1)
+
+    while (k+1<Nt) and (clock[k]<T):
+        k = k+1
+        s1 = tryexponential(1)
+        # solve
+        y0[0:model_hybrid.dimension] = model_hybrid.getstate(0)
+        y0[model_hybrid.dimension:2*model_hybrid.dimension] = model_exact.getstate(0)
+        y0[2*model_hybrid.dimension] = 0.
+        tj.set_initial_value(y0,0)
+        tj.integrate(s1)
+        ys1 = tj.y
+
+        for i in range(model_hybrid.dimension):
+            model_hybrid.systemState[i].value[0] = ys1[i]
+        for i in range(model_hybrid.dimension):
+            model_exact.systemState[i].value[0] = ys1[i+model_hybrid.dimension]
+        t_next = tj.y[2*model_hybrid.dimension]
+
+
+        for e in model_hybrid.events:
+            e.updaterate()
+        for e in model_exact.events:
             e.updaterate()
 
         # update slow species
         r = np.random.rand()
-        agg_rate = sum((e.rate for e in model.eventsSlow))
+        agg_rate = 0.
+        for i in range(len(model_hybrid.events)):
+            if model_hybrid.events[i].hybridType == SLOW:
+                hybrid_rate = model_hybrid.events[i].rate
+                exact_rate = model_exact.events[i].rate
+                agg_rate = agg_rate + res(hybrid_rate,exact_rate )
+                agg_rate = agg_rate + res(exact_rate,hybrid_rate )
+                agg_rate = agg_rate + min(hybrid_rate,exact_rate )
+            else:
+                agg_rate = agg_rate + model_exact.events[i].rate
+                #agg_rate = agg_rate + model_hybrid.events[i].rate
+            #else:
+            #    print("PROBLEM")
+
+
+        # find reaction
         if r>sample_rate/(agg_rate+sample_rate):
-            firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-            direction = firing_event.direction
-            model.systemState = model.systemState + direction
+            firing_event_hybrid,firing_event_exact  = findreaction_coupled(model_hybrid.events,model_exact.events,agg_rate,r)
+
+            if isinstance(firing_event_hybrid,Reaction):
+                firing_event_hybrid.react()
+            if isinstance(firing_event_exact,Reaction):
+                firing_event_exact.react()
         clock[k] = clock[k-1] + t_next
-        path[k][:] = model.systemState
-
-    # now find the value of the continous part at exactly T
-    rre = ode(rre_f).set_integrator(ode_method,atol = h,rtol = h)
-    rre.set_f_params(model)
-    rre.set_initial_value(path[k-1][:].reshape(model.ss_d1*model.ss_d2,),0)
-    s1 = T-clock[k-1]
-    rre.integrate(s1)
-    model.systemState = rre.y.reshape(model.ss_d1,model.mesh.Nvoxels)
-    clock[k] = T
-    path[k][:] = model.systemState
-
+        path[k][0:model_hybrid.dimension] = model_hybrid.getstate(0)
+        path[k][model_hybrid.dimension:2*model_hybrid.dimension] = model_exact.getstate(0)
     return path[0:k+1],clock[0:k+1]
-
-
-def strang_split(model,T,h0,h,ode_method):
-    clock = np.arange(0,T,h0)
-    path = np.zeros((len(clock),len(model.systemState),model.mesh.Nvoxels))
-    path[0,:] = model.systemState
-
-    # setup ODE integrator
-    rre = ode(rre_f).set_integrator(ode_method,atol = h,rtol = h)
-    rre.set_f_params(model)
-
-    for k in range(len(clock)):
-        tY = clock[k]
-        # gillespie 1/2 step
-        while tY<clock[k]+h0/2.:
-            agg_rate = sum((e.rate for e in model.eventsSlow))
-            delta = exponential0(agg_rate)
-            if delta<h0/2.:
-                tY = tY+delta
-                # find next reaction
-                r = np.random.rand()
-                firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-                direction = firing_event.direction
-                # fire slow reaction and update system state
-                model.systemState = model.systemState + direction
-                for e in model.eventsFast:
-                    e.updaterate()
-                for e in model.eventsSlow:
-                    e.updaterate()
-
-        # integrate 1 step
-        rre.set_initial_value(model.systemState,0)
-        rre.integrate(h0)
-        model.systemState = rre.y
-        for e in model.eventsFast:
-            e.updaterate()
-        for e in model.eventsSlow:
-            e.updaterate()
-
-        # gillespie 1/2 step
-        tY = clock[k]+h0/2.
-        while tY<clock[k]+h0:
-            agg_rate = sum((e.rate for e in model.eventsSlow))
-            delta = exponential0(agg_rate)
-
-            if delta<h0/2.:
-                tY = tY+delta
-                # find next reaction
-                r =  np.random.rand()
-                firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-                direction = firing_event.direction
-                # fire slow reaction and update system state
-
-                model.systemState =  model.systemState + direction
-                for e in model.eventsFast:
-                    e.updaterate()
-                for e in model.eventsSlow:
-                    e.updaterate()
-
-        # store path
-        path[k][:] = model.systemState
-    return path,clock
-
-def gillespie_hybrid(model,T,h1,h2,ode_method):
-    path = np.zeros((Nt,len(model.systemState),model.mesh.Nvoxels))
-    clock = np.zeros(Nt)
-    path[0,:] = model.systemState
-    k = 1
-    rre = ode(rre_f).set_integrator(ode_method,atol = h1,rtol = h1)
-    rre.set_f_params(model)
-    while (k<Nt) and (clock[k-1]<T):
-        # compute aggregate rate
-        agg_rate = sum((e.rate for e in model.eventsSlow))
-        delta = exponential0(agg_rate)
-        if delta<h2:
-            # find next reaction
-            r =  np.random.rand()
-            firing_event = find_reaction(model.eventsSlow,agg_rate,r)
-            direction = firing_event.direction
-
-            # fire slow reaction and update system state
-            clock[k] = clock[k-1]+delta
-            model.systemState =  model.systemState + direction
-            path[k][:] = model.systemState
-
-            # integrate
-            rre.set_initial_value(model.systemState,clock[k])
-            rre.integrate(rre.t+delta)
-            model.systemState = rre.y
-            path[k][:] = model.systemState
-
-        else:
-            # integrate
-            rre.set_initial_value(model.systemState,clock[k])
-            rre.integrate(rre.t+h2)
-            clock[k] = clock[k-1]+h2
-            model.systemState = rre.y
-            path[k][:] = model.systemState
-
-        # update rates
-        for e in model.eventsFast:
-            e.updaterate()
-        for e in model.eventsSlow:
-            e.updaterate()
-        k = k+1
-    #print("k = "+str(k))
-    return path[0:k-1],clock[0:k-1]
-
-def find_reaction(events,agg_rate,r):
-    s = 0.
-    for e in events:
-        s = s+e.rate
-        if r<s/agg_rate:
-            return e
-
-
-
-def tau_leaping(model,T):
-    return None
