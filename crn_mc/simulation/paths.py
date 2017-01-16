@@ -1,9 +1,9 @@
 from ..mesh import *
 from ..model import *
-import inspect
+import copy,json
 import numpy as np
 from scipy.integrate import ode
-import copy
+
 
 
 global Nt
@@ -154,15 +154,36 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
 # path generation ---------------------------------------------------------
 
 def makepath(model,T,h = None,ode_method='lsoda',sample_rate = 0.,
-                        path_type = 'hybrid',*args,**kwargs):
+                        path_type = 'hybrid',output_file=None,*args,**kwargs):
     if h == None:
-        h = 1./model.systeSize
+        h = 1./model.systemSize
     if path_type == 'hybrid':
-        return makepath_hybrid(model,T,h,ode_method,sample_rate)
+        path,clock = makepath_hybrid(model,T,h,ode_method,sample_rate)
+        # the reason for computing path entry here is that it differs for esimators
+        path_entry = {model.systemState[i].name:list(path[:,i])
+            for i in range(model.dimension)}
     elif path_type == 'exact':
-        return makepath_exact(model,T)
+        path,clock = makepath_exact(model,T)
+        path_entry = {model.systemState[i].name:list(path[:,i])
+            for i in range(model.dimension)}
     elif path_type == 'coupled':
-        return makepath_coupled(model,T,h,ode_method,sample_rate)
+        path,clock = makepath_coupled(model,T,h,ode_method,sample_rate)
+        # here this is a but different
+        path_entry_hybrid = {model.systemState[i].name:list(path[:,i])
+            for i in range(model.dimension)}
+        path_entry_exact = {model.systemState[i].name+'*':
+            list(path[:,i+model.dimension])for i in range(model.dimension)}
+        path_entry = dict(path_entry_hybrid, **path_entry_exact)
+    if output_file != None:
+        params_dict = {'path_type':path_type,'sample_rate':sample_rate,'ode_method':ode_method,
+                    'T':T,'h':h}
+        model_info = {'system_size':model.systemSize,
+            'events':list([e.__str__() for e in model.events])}
+        results_dict = {
+            'path':path_entry,'clock':list(clock)}
+        output = {'params':params_dict,'model':model_info,'results':results_dict}
+        print(json.dumps(output),file = output_file)
+    return path,clock
 
 
 def makepath_exact(model,T):
