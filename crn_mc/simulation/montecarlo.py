@@ -23,29 +23,14 @@ def montecarlo(model,initial_data,T,delta,ode_method='lsoda',sample_rate =0.,est
         estimate,standdev,event_count=  montecarlo_coupled(model,initial_data,T,func,delta,voxel,ode_method,
             sample_rate,min_samples,max_samples,output_file)
     # this is all for output
-    params_dict = {
-        'estimator':estimator,
-        'sample_rate':sample_rate,
-        'ode_method':ode_method,
-        'T':T,
-        'delta':delta,
-        'max_samples':max_samples,
-        'min_samples':min_samples
-    }
-
-    model_info = {
-        'system_size':model.systemSize,
-        'events':list([e.__str__() for e in model.events]),
-        'initial_data':list(initial_data)
-    }
-
-    results_dict = {
-        'estimate':{model.systemState[i].name:estimate[i] for i in range(model.dimension)},
-        'event_count':event_count,
-        'standdev':list(standdev)
-    }
-
-    output = {'params':params_dict,'model':model_info,'results':results_dict}
+    params_dict = {'estimator':estimator,'sample_rate':sample_rate,
+        'ode_method':ode_method,'T':T,'delta':delta,
+        'max_samples':max_samples,'min_samples':min_samples}
+    model_dict = {'system_size':model.systemSize,'events':list([e.__str__() for e in model.events]),
+        'initial_data':list(initial_data)}
+    results_dict = {'estimate':{model.systemState[i].name:estimate[i] for i in range(model.dimension)},
+        'event_count':event_count,'standdev':list(standdev)}
+    output = {'params':params_dict,'model':model_dict,'results':results_dict}
     #print('\n',file = output_file)
     print(json.dumps(output),file = output_file)
 

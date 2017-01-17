@@ -6,11 +6,12 @@ from scipy.integrate import ode
 
 
 
+# should move this to arguments
 global Nt
 Nt =  10e5
 
 
-# HELPER FUNCTIONS --------------------------------------------------------
+# Helper functions --------------------------------------------------------
 def tryexponential(rate):
     """ Trys to compute exponential. """
     try:
@@ -81,7 +82,8 @@ def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
 
 
 # Right hand sides --------------------------------------------------------
-
+# curretly spending too much time inside this function. perhaps don't
+# use filter?
 
 def chvrhs(t,y,model,sample_rate):
     for i in range(model.dimension):
@@ -150,6 +152,28 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
 
+def rrerhs(t,y,model,sample_rate):
+    """rhs of determistic part of equations, i.e. the rhs of reaction rate equations"""
+    for i in range(model.dimension):
+        model.systemState[i].value[0] = y[i]
+    for e in model.events:
+        e.updaterate()
+    rhs = np.zeros(model.dimension)
+    fast = filter(lambda e: e.hybridType == FAST, model.events)
+    for e in fast:
+        for i in range(model.dimension):
+            name = model.systemState[i].name
+            r = list(filter(lambda e: e[0].name == name, e.reactants))
+            p = list(filter(lambda e: e[0].name == name, e.products))
+            direction = 0.
+            if r:
+                direction = direction - float(r[0][1])
+            if p:
+                direction = direction + float(p[0][1])
+            rhs[i] = rhs[i]+ direction*e.rate
+    return rhs
+
+
 
 # path generation ---------------------------------------------------------
 
@@ -158,16 +182,16 @@ def makepath(model,T,h = None,ode_method='lsoda',sample_rate = 0.,
     if h == None:
         h = 1./model.systemSize
     if path_type == 'hybrid':
-        path,clock = makepath_hybrid(model,T,h,ode_method,sample_rate)
+        path, clock = makepath_hybrid(model,T,h,ode_method,sample_rate)
         # the reason for computing path entry here is that it differs for esimators
         path_entry = {model.systemState[i].name:list(path[:,i])
             for i in range(model.dimension)}
     elif path_type == 'exact':
-        path,clock = makepath_exact(model,T)
+        path, clock = makepath_exact(model,T)
         path_entry = {model.systemState[i].name:list(path[:,i])
             for i in range(model.dimension)}
     elif path_type == 'coupled':
-        path,clock = makepath_coupled(model,T,h,ode_method,sample_rate)
+        path, clock = makepath_coupled(model,T,h,ode_method,sample_rate)
         # here this is a but different
         path_entry_hybrid = {model.systemState[i].name:list(path[:,i])
             for i in range(model.dimension)}
@@ -251,6 +275,17 @@ def makepath_hybrid(model,T,h,ode_method,sample_rate):
             firing_event.react()
         clock[k] = clock[k-1] + t_next
         path[k][:] = model.getstate(0)
+    # now compute value at exactly T
+    tj = ode(rrerhs).set_integrator(ode_method,atol = h,rtol = h)
+    tj.set_f_params(model,sample_rate)
+    y0 = path[k-1][:]
+    tj.set_initial_value(y0,clock[k-1])
+    tj.integrate(T)
+    yT = tj.y
+    for i in range(model.dimension):
+        model.systemState[i].value[0] = yT[i]
+    clock[k] = T
+    path[k][:] = model.getstate(0)
     return path[0:k+1],clock[0:k+1]
 
 
@@ -312,9 +347,6 @@ def makepath_coupled(model_hybrid,T,h,ode_method,sample_rate):
                 agg_rate = agg_rate + min(hybrid_rate,exact_rate )
             else:
                 agg_rate = agg_rate + model_exact.events[i].rate
-                #agg_rate = agg_rate + model_hybrid.events[i].rate
-            #else:
-            #    print("PROBLEM")
 
 
         # find reaction

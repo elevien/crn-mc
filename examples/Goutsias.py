@@ -7,11 +7,8 @@ from crn_mc.simulation.montecarlo import *
 from timer import *
 
 
-Nx = 1
-L = 1
-T = 1.
-mesh = make_lattice1d(Nx,L)
-systemSize = 10.
+Nx = 1;L = 1;T = 1.
+mesh = make_lattice1d(Nx,L);systemSize = 10.;
 m = Model(mesh,systemSize)
 # from HYE-WON KANG AND THOMAS G. KURTZ 2013
 X1 = m.addspecies("M",exponent=1.)
@@ -33,18 +30,9 @@ m.addreaction([["M",2]],[["D",1]],8.30,exponent=1.)
 m.addreaction([["D",1]],[["M",2]],0.55,exponent=1.)
 
 # set initial data
-ic = [1.,1.,0.,2.,0.,0.,0.]
-for i in range(m.dimension):
-    m.systemState[i].value[0]= ic[i]
-delta = 0.8
-
-output_file = open("mc_info.txt","w")
-Q2,standdev2,event_count2 = montecarlo(m,ic,T,delta,ode_method='lsoda',sample_rate = 4.,
-                                    estimator = 'coupled',path_type='hybrid',output_file=output_file)
-Q1,standdev1,event_count1 = montecarlo(m,ic,T,delta,ode_method='lsoda',sample_rate = 4.,
+ic = [1.,1.,0.,2.,0.,0.,0.];
+output_file = open("mc_info.txt","w");
+Q2,standdev2,event_count2 = montecarlo(m,ic,T,delta,ode_method='lsoda',
+                                    estimator = 'coupled',output_file=output_file)
+Q1,standdev1,event_count1 = montecarlo(m,ic,T,delta,ode_method='lsoda',
                                     estimator = 'crude',path_type='exact',output_file=output_file )
-
-
-plt.plot(standdev1,'k-')
-plt.plot(standdev2,'g-')
-plt.show()
