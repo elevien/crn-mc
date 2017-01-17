@@ -127,7 +127,7 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
     for e in model_hybrid.events:
         e.updaterate()
     agg_rate = 0.
-    for i in range(model_hybrid.dimension):
+    for i in range(len(model_hybrid.events)):
         if model_hybrid.events[i].hybridType == SLOW or model_hybrid.events[i].hybridType == MIXED:
             hybrid_rate = model_hybrid.events[i].rate
             exact_rate = model_exact.events[i].rate
@@ -136,6 +136,8 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
             agg_rate = agg_rate + min(hybrid_rate,exact_rate )
         elif model_hybrid.events[i].hybridType == FAST or model_hybrid.events[i].hybridType == VITL:
             agg_rate = agg_rate + model_exact.events[i].rate
+
+
     rhs = np.zeros(2*model_exact.dimension+1)
     fast = filter(lambda e: e.hybridType == FAST, model_hybrid.events)
     for e in fast:
@@ -348,7 +350,6 @@ def makepath_coupled(model_hybrid,T,h,ode_method,sample_rate):
                 agg_rate = agg_rate + min(hybrid_rate,exact_rate )
             elif model_hybrid.events[i].hybridType == FAST or model_hybrid.events[i].hybridType == VITL:
                 agg_rate = agg_rate + model_exact.events[i].rate
-
 
         # find reaction
         if r>sample_rate/(agg_rate+sample_rate):
