@@ -33,7 +33,7 @@ def getstochasticevents(model):
 def getstochasticevents_hybrid(model):
     stochastic_events = []
     for e in model.events:
-        if (e.hybridType == SLOW) or (e.hybridType == MIXED):
+        if e.hybridType == SLOW or e.hybridType == MIXED:
             stochastic_events.append(e)
     return stochastic_events
 
@@ -47,7 +47,7 @@ def findreaction_gillespie(events,agg_rate,r):
 def findreaction_hybrid(events,agg_rate,r):
     rate_sum = 0.
     for e in events:
-        if (e.hybridType == SLOW) or (e.hybridType == MIXED):
+        if e.hybridType == SLOW or e.hybridType == MIXED:
             rate_sum = rate_sum +e.rate
             if r<rate_sum/agg_rate:
                 return e
