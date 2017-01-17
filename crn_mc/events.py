@@ -53,9 +53,6 @@ class Reaction(Event):
         # but \gamma_i > \rho_j for some (S_1) species
         # in such instances reaction only appears in slow species evolution
 
-        for p in products:
-            if p[0].scale>self.scale:
-                self.hybridType = NULL
 
         self.rate = 0.
         super().__init__()
@@ -63,11 +60,11 @@ class Reaction(Event):
     def __str__(self):
         s = "With scale "+str(self.scale)+" of type "+self.hybridType+": "
         for r in self.reactants:
-            s = s+str(r[1])+""+r[0].name + " +"
+            s = s+str(r[1])+""+r[0].name+"("+str(r[0].scale)+")" + " +"
         s = s[:-1]
         s = s + " -> "
         for p in self.products:
-            s = s+str(p[1])+""+p[0].name + " +"
+            s = s+str(p[1])+""+p[0].name+"("+str(p[0].scale)+")"  + " +"
         s = s[:-1]
         return s
 
@@ -78,6 +75,13 @@ class Reaction(Event):
             self.hybridType = SLOW
         else:
             self.hybridType = FAST
+        k =0
+        for p in self.products:
+            if p[0].scale>self.scale:
+                k=k+1
+        if k == len(self.products):
+            self.hybridType = NULL
+
         return self.hybridType
 
     def updaterate(self):

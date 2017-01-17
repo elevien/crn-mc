@@ -34,7 +34,6 @@ class Model:
             - products -- array of tuples (Species name,Integer>0)
             - intensity -- float
             - exponent -- float
-            - hybridType -- "FAST","SLOW"...
 
         Output:
             - reaction
