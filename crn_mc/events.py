@@ -7,7 +7,8 @@ from .species import *
 EXP_MAX =  10e20
 FAST = "FAST"
 SLOW = "SLOW"
-NULL = "NULL"
+MIXED = "MIXED"
+VITL = "VANISHES"
 
 
 class Event:
@@ -75,12 +76,18 @@ class Reaction(Event):
             self.hybridType = SLOW
         else:
             self.hybridType = FAST
-        k =0
+        k1 =0
         for p in self.products:
             if p[0].scale>self.scale:
-                k=k+1
-        if k == len(self.products):
-            self.hybridType = NULL
+                k1=k1+1
+        k2 =0
+        for r in self.reactants:
+            if r[0].scale>self.scale:
+                k2=k2+1
+        if k1 == len(self.products) and k2 == len(self.reactants):
+            self.hybridType = VITL
+        elif k1>0 or k2>0:
+            self.hybridType = MIXED
 
         return self.hybridType
 
@@ -121,9 +128,9 @@ class Reaction(Event):
 
     def react(self):
         """ update species involved in reaction accoding to stoichiometry. """
-        if self.hybridType == NULL:
-            # NULL reactions need special path, since they don't alter all
-            # their products and reactants
+        if self.hybridType == MIXED:
+            # MIXED reactions need special path, since
+            # they don't alter all their species
             for r in self.reactants:
                 if r[0].scale == self.scale:
                     r[0].value[self.voxel] = r[0].value[self.voxel]-(1./r[0].scale)*float(r[1])

@@ -30,6 +30,13 @@ def getstochasticevents(model):
             stochastic_events.append(e)
     return stochastic_events
 
+def getstochasticevents_hybrid(model):
+    stochastic_events = []
+    for e in model.events:
+        if (e.hybridType == SLOW) or (e.hybridType == MIXED):
+            stochastic_events.append(e)
+    return stochastic_events
+
 def findreaction_gillespie(events,agg_rate,r):
     rate_sum = 0.
     for e in events:
@@ -40,7 +47,7 @@ def findreaction_gillespie(events,agg_rate,r):
 def findreaction_hybrid(events,agg_rate,r):
     rate_sum = 0.
     for e in events:
-        if e.hybridType != FAST:
+        if (e.hybridType == SLOW) or (e.hybridType == MIXED):
             rate_sum = rate_sum +e.rate
             if r<rate_sum/agg_rate:
                 return e
@@ -49,32 +56,23 @@ null = NullEvent()
 def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
     rate_sum = 0.
     for i in range(len(events_hybrid)):
-        if events_hybrid[i].hybridType == SLOW:
+        if events_hybrid[i].hybridType == SLOW or events_hybrid[i].hybridType == MIXED:
             exact_rate = events_exact[i].rate
             hybrid_rate  = events_hybrid[i].rate
             rate_sum = rate_sum + res(hybrid_rate,exact_rate)
             if r<rate_sum/agg_rate:
                 return events_hybrid[i],null
-            rate_sum = rate_sum + res(exact_rate,exact_rate)
+            rate_sum = rate_sum + res(exact_rate,hybrid_rate)
             if r<rate_sum/agg_rate:
                 return null,events_exact[i]
             rate_sum = rate_sum + min(hybrid_rate,exact_rate)
             if r<rate_sum/agg_rate:
                 return events_hybrid[i],events_exact[i]
-        elif events_hybrid[i].hybridType == FAST:
+        elif events_hybrid[i].hybridType == FAST or events_hybrid[i].hybridType == VITL:
             exact_rate = events_exact[i].rate
             rate_sum = rate_sum + exact_rate
             if r<rate_sum/agg_rate:
                 return null,events_exact[i]
-        elif events_hybrid[i].hybridType == NULL:
-            exact_rate = events_exact[i].rate
-            rate_sum = rate_sum + exact_rate
-            if r<rate_sum/agg_rate:
-                return null,events_exact[i]
-            hybrid_rate = events_hybrid[i].rate
-            rate_sum = rate_sum + exact_rate
-            if r<rate_sum/agg_rate:
-                return events_hybrid[i],null
         #else:
         #    print("PROBLEM")
     return null,null
@@ -85,18 +83,19 @@ def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
 # curretly spending too much time inside this function. perhaps don't
 # use filter?
 
-def chvrhs(t,y,model,sample_rate):
+def chvrhs_hybrid(t,y,model,sample_rate):
     for i in range(model.dimension):
         model.systemState[i].value[0] = y[i]
     for e in model.events:
         e.updaterate()
-    slow = filter(lambda e: e.hybridType == SLOW, model.events)
-    null = filter(lambda e: e.hybridType == NULL, model.events)
+
+    #MIXED = filter(lambda e: e.hybridType == MIXED, model.events)
     agg_rate = 0.
-    for s in slow:
-        agg_rate = agg_rate + s.rate
-    for s in null:
-        agg_rate = agg_rate + s.rate
+    for i in range(model.dimension):
+        if model.events[i].hybridType == SLOW or model.events[i].hybridType == MIXED:
+            agg_rate = agg_rate + model.events[i].rate
+    #for s in MIXED:
+    #    agg_rate = agg_rate + s.rate
 
     rhs = np.zeros(model.dimension+1)
     fast = filter(lambda e: e.hybridType == FAST, model.events)
@@ -128,14 +127,17 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
     for e in model_hybrid.events:
         e.updaterate()
     agg_rate = 0.
-    for i in range(len(model_exact.events)):
-        rate_hybrid = model_hybrid.events[i].rate
-        rate_exact = model_exact.events[i].rate
-        agg_rate = agg_rate + rate_hybrid + rate_exact - min(rate_hybrid,rate_exact)
-
+    for i in range(model_hybrid.dimension):
+        if model_hybrid.events[i].hybridType == SLOW or model_hybrid.events[i].hybridType == MIXED:
+            hybrid_rate = model_hybrid.events[i].rate
+            exact_rate = model_exact.events[i].rate
+            agg_rate = agg_rate + res(hybrid_rate,exact_rate )
+            agg_rate = agg_rate + res(exact_rate,hybrid_rate )
+            agg_rate = agg_rate + min(hybrid_rate,exact_rate )
+        elif model_hybrid.events[i].hybridType == FAST or model_hybrid.events[i].hybridType == VITL:
+            agg_rate = agg_rate + model_exact.events[i].rate
     rhs = np.zeros(2*model_exact.dimension+1)
     fast = filter(lambda e: e.hybridType == FAST, model_hybrid.events)
-
     for e in fast:
         for i in range(model_exact.dimension):
             name = model_exact.systemState[i].name
@@ -148,7 +150,6 @@ def chvrhs_coupled(t,y,model_hybrid,model_exact,sample_rate):
                 direction = direction + float(p[0][1])
             rhs[i] = rhs[i] + direction*e.rate
     rhs[2*model_exact.dimension] = 1.
-
     rhs = rhs/(agg_rate+sample_rate)
     return rhs
 
@@ -247,7 +248,7 @@ def makepath_hybrid(model,T,h,ode_method,sample_rate):
 
     # for hybrid paths use chv ode_method
     k = 0
-    tj = ode(chvrhs).set_integrator(ode_method,atol = h,rtol = h)
+    tj = ode(chvrhs_hybrid).set_integrator(ode_method,atol = h,rtol = h)
     tj.set_f_params(model,sample_rate)
     while (k+1<Nt) and (clock[k]<T):
         k = k+1
@@ -266,7 +267,7 @@ def makepath_hybrid(model,T,h,ode_method,sample_rate):
             e.updaterate()
         # update slow species
         r = np.random.rand()
-        stochastic_events = getstochasticevents(model)
+        stochastic_events = getstochasticevents_hybrid(model)
         agg_rate = 0.
         for e in stochastic_events:
             agg_rate = agg_rate + e.rate
@@ -339,13 +340,13 @@ def makepath_coupled(model_hybrid,T,h,ode_method,sample_rate):
         r = np.random.rand()
         agg_rate = 0.
         for i in range(len(model_hybrid.events)):
-            if model_hybrid.events[i].hybridType == SLOW:
+            if model_hybrid.events[i].hybridType == SLOW or model_hybrid.events[i].hybridType == MIXED:
                 hybrid_rate = model_hybrid.events[i].rate
                 exact_rate = model_exact.events[i].rate
                 agg_rate = agg_rate + res(hybrid_rate,exact_rate )
                 agg_rate = agg_rate + res(exact_rate,hybrid_rate )
                 agg_rate = agg_rate + min(hybrid_rate,exact_rate )
-            else:
+            elif model_hybrid.events[i].hybridType == FAST or model_hybrid.events[i].hybridType == VITL:
                 agg_rate = agg_rate + model_exact.events[i].rate
 
 

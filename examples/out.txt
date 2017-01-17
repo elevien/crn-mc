@@ -18,14 +18,14 @@ model setup
  system size = 0.15848931924611134
  eps         = 0.15848931924611134
  events:
- With scale 0.1 of type NULL: 1RNA  -> 1RNA +1M 
- With scale 0.1 of type NULL: 1M  -> 10 
- With scale 0.1 of type NULL: 1DNA.D  -> 1RNA +1DNA.D 
- With scale 0.1 of type NULL: 1RNA  -> 10 
+ With scale 0.1 of type MIXED: 1RNA  -> 1RNA +1M 
+ With scale 0.1 of type MIXED: 1M  -> 10 
+ With scale 0.1 of type MIXED: 1DNA.D  -> 1RNA +1DNA.D 
+ With scale 0.1 of type MIXED: 1RNA  -> 10 
  With scale 1.0 of type SLOW: 1DNA +1D  -> 1DNA.D 
- With scale 1.0 of type NULL: 1DNA.D  -> 1DNA +1D 
- With scale 0.01 of type NULL: 1DNA.D +1D  -> 1DNA.2D 
- With scale 0.01 of type NULL: 1DNA.2D  -> 1DNA.D +1D 
+ With scale 1.0 of type MIXED: 1DNA.D  -> 1DNA +1D 
+ With scale 0.01 of type MIXED: 1DNA.D +1D  -> 1DNA.2D 
+ With scale 0.01 of type MIXED: 1DNA.2D  -> 1DNA.D +1D 
  With scale 10.0 of type FAST: 2M  -> 1D 
  With scale 10.0 of type FAST: 1D  -> 2M 
 
@@ -37,14 +37,14 @@ model setup
  system size = 0.15848931924611134
  eps         = 0.15848931924611134
  events:
- With scale 0.1 of type NULL: 1RNA  -> 1RNA +1M 
- With scale 0.1 of type NULL: 1M  -> 10 
- With scale 0.1 of type NULL: 1DNA.D  -> 1RNA +1DNA.D 
- With scale 0.1 of type NULL: 1RNA  -> 10 
+ With scale 0.1 of type MIXED: 1RNA  -> 1RNA +1M 
+ With scale 0.1 of type MIXED: 1M  -> 10 
+ With scale 0.1 of type MIXED: 1DNA.D  -> 1RNA +1DNA.D 
+ With scale 0.1 of type MIXED: 1RNA  -> 10 
  With scale 1.0 of type SLOW: 1DNA +1D  -> 1DNA.D 
- With scale 1.0 of type NULL: 1DNA.D  -> 1DNA +1D 
- With scale 0.01 of type NULL: 1DNA.D +1D  -> 1DNA.2D 
- With scale 0.01 of type NULL: 1DNA.2D  -> 1DNA.D +1D 
+ With scale 1.0 of type MIXED: 1DNA.D  -> 1DNA +1D 
+ With scale 0.01 of type MIXED: 1DNA.D +1D  -> 1DNA.2D 
+ With scale 0.01 of type MIXED: 1DNA.2D  -> 1DNA.D +1D 
  With scale 10.0 of type FAST: 2M  -> 1D 
  With scale 10.0 of type FAST: 1D  -> 2M 
 
@@ -75,14 +75,14 @@ model setup
  system size = 0.15848931924611134
  eps         = 0.15848931924611134
  events:
- With scale 0.1 of type NULL: 1RNA  -> 1RNA +1M 
- With scale 0.1 of type NULL: 1M  -> 10 
- With scale 0.1 of type NULL: 1DNA.D  -> 1RNA +1DNA.D 
- With scale 0.1 of type NULL: 1RNA  -> 10 
+ With scale 0.1 of type MIXED: 1RNA  -> 1RNA +1M 
+ With scale 0.1 of type MIXED: 1M  -> 10 
+ With scale 0.1 of type MIXED: 1DNA.D  -> 1RNA +1DNA.D 
+ With scale 0.1 of type MIXED: 1RNA  -> 10 
  With scale 1.0 of type SLOW: 1DNA +1D  -> 1DNA.D 
- With scale 1.0 of type NULL: 1DNA.D  -> 1DNA +1D 
- With scale 0.01 of type NULL: 1DNA.D +1D  -> 1DNA.2D 
- With scale 0.01 of type NULL: 1DNA.2D  -> 1DNA.D +1D 
+ With scale 1.0 of type MIXED: 1DNA.D  -> 1DNA +1D 
+ With scale 0.01 of type MIXED: 1DNA.D +1D  -> 1DNA.2D 
+ With scale 0.01 of type MIXED: 1DNA.2D  -> 1DNA.D +1D 
  With scale 10.0 of type FAST: 2M  -> 1D 
  With scale 10.0 of type FAST: 1D  -> 2M 
 

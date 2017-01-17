@@ -7,7 +7,7 @@ from .species import *
 EXP_MAX =  10e20
 FAST = "FAST"
 SLOW = "SLOW"
-NULL = "NULL"
+MIXED = "MIXED"
 
 
 class Event:
@@ -17,12 +17,12 @@ class Event:
     def updaterate(self):
         return None
 
-class NullEvent:
-    """ Null event represents nothing happening. Useful in path generation. """
+class MIXEDEvent:
+    """ MIXED event represents nothing happening. Useful in path generation. """
     def __init__(self):
         super().__init__()
     def __str__(self):
-        return "Null Reaction"
+        return "MIXED Reaction"
     def updaterate(self):
         return None
 
@@ -55,7 +55,7 @@ class Reaction(Event):
 
         for p in products:
             if p[0].scale>self.scale:
-                self.hybridType = NULL
+                self.hybridType = MIXED
 
         self.rate = 0.
         super().__init__()
@@ -117,8 +117,8 @@ class Reaction(Event):
 
     def react(self):
         """ update species involved in reaction accoding to stoichiometry. """
-        if self.hybridType == NULL:
-            # NULL reactions need special path, since they don't alter all
+        if self.hybridType == MIXED:
+            # MIXED reactions need special path, since they don't alter all
             # their products and reactants
             for r in self.reactants:
                 if r[0].scale == self.scale:

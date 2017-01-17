@@ -44,7 +44,7 @@ def findreaction_hybrid(events,agg_rate,r):
             if r<rate_sum/agg_rate:
                 return e
 
-null = NullEvent()
+MIXED = MIXEDEvent()
 def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
     rate_sum = 0.
     for i in range(len(events_hybrid)):
@@ -53,10 +53,10 @@ def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
             hybrid_rate  = events_hybrid[i].rate
             rate_sum = rate_sum + res(hybrid_rate,exact_rate)
             if r<rate_sum/agg_rate:
-                return events_hybrid[i],null
+                return events_hybrid[i],MIXED
             rate_sum = rate_sum + res(exact_rate,exact_rate)
             if r<rate_sum/agg_rate:
-                return null,events_exact[i]
+                return MIXED,events_exact[i]
             rate_sum = rate_sum + min(hybrid_rate,exact_rate)
             if r<rate_sum/agg_rate:
                 return events_hybrid[i],events_exact[i]
@@ -64,19 +64,19 @@ def findreaction_coupled(events_hybrid,events_exact,agg_rate,r):
             exact_rate = events_exact[i].rate
             rate_sum = rate_sum + exact_rate
             if r<rate_sum/agg_rate:
-                return null,events_exact[i]
-        elif events_hybrid[i].hybridType == NULL:
+                return MIXED,events_exact[i]
+        elif events_hybrid[i].hybridType == MIXED:
             exact_rate = events_exact[i].rate
             rate_sum = rate_sum + exact_rate
             if r<rate_sum/agg_rate:
-                return null,events_exact[i]
+                return MIXED,events_exact[i]
             hybrid_rate = events_hybrid[i].rate
             rate_sum = rate_sum + exact_rate
             if r<rate_sum/agg_rate:
-                return events_hybrid[i],null
+                return events_hybrid[i],MIXED
         #else:
         #    print("PROBLEM")
-    return null,null
+    return MIXED,MIXED
 
 
 
@@ -89,11 +89,11 @@ def chvrhs(t,y,model,sample_rate):
     for e in model.events:
         e.updaterate()
     slow = filter(lambda e: e.hybridType == SLOW, model.events)
-    null = filter(lambda e: e.hybridType == NULL, model.events)
+    MIXED = filter(lambda e: e.hybridType == MIXED, model.events)
     agg_rate = 0.
     for s in slow:
         agg_rate = agg_rate + s.rate
-    for s in null:
+    for s in MIXED:
         agg_rate = agg_rate + s.rate
 
     rhs = np.zeros(model.dimension+1)
