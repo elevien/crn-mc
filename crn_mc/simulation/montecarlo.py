@@ -1,6 +1,7 @@
 from ..mesh import *
 from ..model import *
 from .paths import *
+from .timer import *
 import sys
 import numpy as np
 from scipy.integrate import ode
@@ -16,12 +17,17 @@ def montecarlo(model,initial_data,T,delta,ode_method='lsoda',sample_rate =0.,est
         output_file=sys.stdout,*args,**kwargs):
     voxel = 0.
 
+    cpu_time = 0.
     if estimator == 'crude':
-        estimate,standdev,event_count= montecarlo_crude(model,initial_data,T,func,delta,voxel,ode_method,
-            sample_rate,path_type,min_samples,max_samples,output_file)
+        with timer() as t:
+            estimate,standdev,event_count= montecarlo_crude(model,initial_data,T,func,delta,
+                voxel,ode_method,sample_rate,path_type,min_samples,max_samples,output_file)
+        cpu_time = t.secs
     elif estimator == 'coupled':
-        estimate,standdev,event_count=  montecarlo_coupled(model,initial_data,T,func,delta,voxel,ode_method,
-            sample_rate,min_samples,max_samples,output_file)
+        with timer() as t:
+            estimate,standdev,event_count=  montecarlo_coupled(model,initial_data,T,func,
+                delta,voxel,ode_method,sample_rate,min_samples,max_samples,output_file)
+        cpu_time = t.secs
     # this is all for output
     params_dict = {'estimator':estimator,'sample_rate':sample_rate,
         'ode_method':ode_method,'T':T,'delta':delta,
@@ -29,7 +35,7 @@ def montecarlo(model,initial_data,T,delta,ode_method='lsoda',sample_rate =0.,est
     model_dict = {'system_size':model.systemSize,'events':list([e.__str__() for e in model.events]),
         'initial_data':list(initial_data)}
     results_dict = {'estimate':{model.systemState[i].name:estimate[i] for i in range(model.dimension)},
-        'event_count':event_count,'standdev':list(standdev)}
+        'event_count':event_count,'standdev':list(standdev),'cpu_time':cpu_time}
     output = {'params':params_dict,'model':model_dict,'results':results_dict}
     #print('\n',file = output_file)
     print(json.dumps(output),file = output_file)
@@ -60,7 +66,7 @@ def montecarlo_crude(model,initial_data,T,func,delta,voxel,ode_method,sample_rat
         for j in range(model.dimension):
             # evalute f on each species to obtain samples
             samples[i,j] = func(path[-1,j])
-            new_standdevs[j] = np.std(samples[:,j]/i)
+            new_standdevs[j] = np.std(samples[:,j])
             # reset initial conditions
             model.systemState[j].value[0] = initial_data[j]
         standdev[i] = max(new_standdevs)
@@ -91,9 +97,9 @@ def montecarlo_coupled(model,initial_data,T,func,delta,voxel,ode_method,sample_r
         for j in range(model.dimension):
             # evalute f on each species to obtain samples
             samples[i,j] = -func(path[-1,j])+func(path[-1,j+model.dimension])
-            new_standdevs[j] = np.std(samples[:,j]/i)
-            # reset initial conditions (remember this model is copied)
+            new_standdevs[j] = np.std(samples[:,j])
             model.systemState[j].value[0] = initial_data[j]
+            # reset initial conditions (remember this model is copied)
         standdev[i] = max(new_standdevs)
         i = i+1
 
