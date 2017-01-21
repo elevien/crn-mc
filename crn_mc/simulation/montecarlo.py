@@ -65,13 +65,13 @@ def montecarlo_crude(model,initial_data,T,func,delta,voxel,ode_method,sample_rat
         event_count = event_count+len(clock)
         for j in range(model.dimension):
             # evalute f on each species to obtain samples
-            samples[i,j] = func(path[-1,j])
-            new_standdevs[j] = np.std(samples[:,j])
+            samples[i,j] = samples[i,j]+func(path[-1,j])
+            new_standdevs[j] = np.std(samples[0:i,j],ddof=1)/np.sqrt(i+1.)
             # reset initial conditions
             model.systemState[j].value[0] = initial_data[j]
         standdev[i] = max(new_standdevs)
         i = i+1
-    return sum(samples/(i-1.)),standdev[1:i],event_count
+    return  np.mean(samples,axis=1),standdev[1:i],event_count
 
 def montecarlo_coupled(model,initial_data,T,func,delta,voxel,ode_method,sample_rate,
         min_samples,max_samples,output_file):
@@ -97,13 +97,12 @@ def montecarlo_coupled(model,initial_data,T,func,delta,voxel,ode_method,sample_r
         for j in range(model.dimension):
             # evalute f on each species to obtain samples
             samples[i,j] = -func(path[-1,j])+func(path[-1,j+model.dimension])
-            new_standdevs[j] = np.std(samples[:,j])
+            new_standdevs[j] = np.std(samples[0:i,j],ddof=1)/np.sqrt(i+1.)
             model.systemState[j].value[0] = initial_data[j]
             # reset initial conditions (remember this model is copied)
         standdev[i] = max(new_standdevs)
         i = i+1
-
-    Q1 = sum(samples/(i-1.))
+    Q1 = np.mean(samples,axis=1)
     Q2,standdev2,event_count2 = montecarlo_crude(model,initial_data,T,func,delta,voxel,ode_method,
             sample_rate,'hybrid',min_samples,max_samples,output_file)
     return Q1+Q2,standdev[1:i],event_count+event_count2
