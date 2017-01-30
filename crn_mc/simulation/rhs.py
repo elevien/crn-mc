@@ -6,6 +6,10 @@ import numpy as np
 from scipy.integrate import ode
 
 
+def res(x,y):
+    return x - min(x,y)
+
+
 # Right hand sides --------------------------------------------------------
 # curretly spending too much time inside this function. perhaps don't
 # use filter?

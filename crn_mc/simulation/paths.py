@@ -21,10 +21,6 @@ def tryexponential(rate):
     except ValueError:
         print("next jump time is at infinity")
 
-def res(x,y):
-    return x - min(x,y)
-
-
 def getstochasticevents(model):
     stochastic_events = []
     for e in model.events:
